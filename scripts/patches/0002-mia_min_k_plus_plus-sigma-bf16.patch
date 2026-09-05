@@ -1,0 +1,17 @@
+diff --git a/src/evals/metrics/mia/min_k_plus_plus.py b/src/evals/metrics/mia/min_k_plus_plus.py
+index aa58214..b71376e 100644
+--- a/src/evals/metrics/mia/min_k_plus_plus.py
++++ b/src/evals/metrics/mia/min_k_plus_plus.py
+@@ -30,9 +30,11 @@ class MinKPlusPlusAttack(MinKProbAttack):
+ 
+         # Handle numerical stability
+         sigma = torch.clamp(sigma, min=1e-6)
++        # sigma 全程也是从 bf16 logits 链路算出来的（tokenwise_vocab_logprobs -> log_softmax），
++        # 跟上面 target_prob/mu 同源；PR #162 修了那两处的 .float()，唯独漏了这句。
+         scores = (
+             target_prob.float().cpu().numpy() - mu.float().cpu().numpy()
+-        ) / torch.sqrt(sigma).cpu().numpy()
++        ) / torch.sqrt(sigma).float().cpu().numpy()
+ 
+         # Take bottom k% as the attack score
+         num_k = max(1, int(len(scores) * self.k))

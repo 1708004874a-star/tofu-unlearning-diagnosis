@@ -1,0 +1,155 @@
+# 遗忘失败分析 — 全局常数
+# 唯一真相来源。人类版文档和 RUNBOOK 都引用这里，不要在别处复制数值。
+# 放置位置：unlearning-analysis/scripts/constants.yaml
+
+meta:
+  repo_commit: "4ad738aaf60f6a4385f6e2506d01da99e76c31f3"   # 开工时确认，变了要重新过 Gate 1a
+  transformers_version: "4.51.3"                            # requirements.txt 的钉版，勿降到 4.45.x
+  seed: 0
+
+# ---------------------------------------------------------------------------
+# 训练
+# ---------------------------------------------------------------------------
+training:
+  effective_batch_size: 32          # per_device × accum × num_processes 必须等于这个数
+  learning_rate: 1.0e-5
+  num_train_epochs: 10
+  weight_decay: 0.01
+  save_strategy: steps
+  save_steps: 4                     # 盘不够降到 6
+  eval_strategy: "no"               # 训练中不评测，评测离线做
+  # 派生量（forget10 = 400 条，有效 batch 32）：
+  #   12 optimizer steps / epoch，120 steps 总计，30 个 ckpt
+  #   每第 3 个 ckpt 落在 step 12/24/.../120 = epoch 边界
+  steps_per_epoch: 12
+  total_steps: 120
+  expected_checkpoints: 30
+
+# ---------------------------------------------------------------------------
+# Gate 1a — target model 自评 vs 官方下载日志（硬停）
+# ---------------------------------------------------------------------------
+gate_1a:
+  tolerance_prob: 0.01              # 概率类、truth ratio 类
+  tolerance_rouge: 0.02             # ROUGE 类；贪心解码跨硬件会翻 argmax，400 条平均能差过 0.01
+  on_rouge_borderline: "diff 逐样本生成结果后人工定性，不要自动放行"
+  fallback_reference: "--eval_logs 里没有 full 的日志时，改对 docs/repro.md 的 target 行"
+
+# ---------------------------------------------------------------------------
+# Gate 1b — NPO 单方法 vs repro.md（软，超过 hard_stop 才停）
+# ---------------------------------------------------------------------------
+gate_1b:
+  hard_stop_delta: 0.15             # forget_Q_A_ROUGE 或 model_utility 差超过这个数 → 停
+  soft_record_only: true            # 以内只记录到 notes/，不停
+  forget_quality_gated: false       # KS p 值量级不稳，不设判据
+  note: "repro.md 是 2×L40s + ZeRO-3 跑的，且明确警告单卡结果会变。小偏差是预期的。"
+
+# ---------------------------------------------------------------------------
+# 操作点
+# ---------------------------------------------------------------------------
+operating_point:
+  # 阈值来自 retain model 逐样本 forget_Q_A_ROUGE 的 bootstrap
+  bootstrap_n: 10000
+  bootstrap_ci: 0.95
+  threshold_side: upper             # 取 95% CI 上界
+  rule: "操作点 A = 首个 forget_Q_A_ROUGE ≤ 上界 的 ckpt"
+  utility_floor_primary: 0.80       # 相对 target model 自身的 model_utility
+  utility_floor_check: 0.90         # 敏感性复核
+  overshoot_flag: 0.10              # 上界 − 选中 ckpt 的 ROUGE，超过则记录（不重跑）
+  eval_stride_coarse: 3             # 先评每第 3 个 ckpt
+  eval_refine_count: 2              # 再评越线区间内的 2 个
+  evals_per_method: 12
+
+# ---------------------------------------------------------------------------
+# Fisher / Δθ
+# ---------------------------------------------------------------------------
+fisher:
+  batch_size: 1                     # 硬性要求：per-sample 梯度平方，不是 batch 平均后再平方
+  n_forget: 400                     # forget10 全部
+  n_retain: 400                     # retain90 随机抽，与 forget 对称
+  retain_sample_seed: 0
+  storage: cpu
+  dtype: float32
+
+delta_theta:
+  null_baseline_draws: 5            # 同模块范数的随机方向，取均值
+  aggregate_level: module           # 每层的 attention / MLP 各一个数
+  report: ["D_over_D_rand", "C_over_C_rand"]
+
+gradient_conflict:
+  enabled_methods: ["GD"]
+  mode: offline                     # 在 ckpt 上算，不进训练循环
+  batch_size: 32                    # 要的是均值梯度，大 batch 正确（与 Fisher 相反）
+  note: "算的是全 batch 梯度冲突，不是逐步 minibatch 冲突，标注清楚"
+
+# ---------------------------------------------------------------------------
+# Gate 2 — RMU 阳性对照（硬停）
+# ---------------------------------------------------------------------------
+gate_2_rmu:
+  cutoff_layer: 7                   # 两项 loss 都建在 layers.7 输出激活上
+  layers_must_be_zero: [8, 9, 10, 11, 12, 13, 14, 15]
+  delta_theta_tolerance: 0.0        # 严格 0：这些层 grad 是 None，AdamW 整个跳过，weight_decay 也不作用
+  recovery_must_be_zero_above_cutoff: true
+  peak_layer_is_observation_only: true   # 峰值位置只记录，不作判据（config 用 .* 让 0–7 层全动，峰值无理论预期）
+  variant_run:
+    enabled: true
+    trainable_params_regex: "model\\.layers\\.(5|6|7)\\.mlp\\.down_proj\\.weight"
+    order: "排在默认版之后"
+    precondition: "必须能到操作点 A；到不了就不当对照，记录后跳过"
+
+# ---------------------------------------------------------------------------
+# Layer restoration
+# ---------------------------------------------------------------------------
+restoration:
+  sweep_all_layers: true            # 不做收窄；1B 16 层，3B 28 层
+  n_layers_1b: 16
+  n_layers_3b: 28
+  cheap_metrics: ["forget_Q_A_ROUGE", "extraction_strength"]
+  full_eval_top_k: 3                # 恢复量前 3 的层升级到全套评测
+  significance:
+    primary: bootstrap_ci           # 逐样本恢复量的 bootstrap CI，下界 > 0 才算显著
+    bootstrap_n: 10000
+    bootstrap_ci: 0.95
+    determinism_check:
+      source: "RMU 8–15 层的 8 次 restoration（同一模型评 8 遍）"
+      expected: 0.0                 # 贪心解码 + 固定 batch，预期逐位相同
+      on_nonzero: "记为数值噪声底并上报——非 0 本身说明评测不确定，影响所有比较"
+
+# ---------------------------------------------------------------------------
+# Relearning
+# ---------------------------------------------------------------------------
+relearning:
+  finetune_subset_frac: 0.10        # forget10 的 10% = 40 条
+  eval_on: "剩余 360 条 held-out"
+  learning_rate: 2.0e-5
+  min_version_methods: "阶段 2 出结果后取 C/C_rand 两端；阶段 2 被压缩则退回 NPO + DPO(idk)"
+  excluded: ["GA"]                  # GA 不回弹可能是模型坏了，这一轴上是混淆的
+
+# ---------------------------------------------------------------------------
+# 评测指标
+# ---------------------------------------------------------------------------
+metrics:
+  config_name: tofu_full            # scripts/configs/eval/tofu_full.yaml，显式传 eval=tofu_full
+  enabled_beyond_default:
+    - exact_memorization
+    - mia_min_k_plus_plus
+  dropped:
+    mia_reference: "参考模型若用 retain90 会与 forget_quality 循环；MinK++ 是 reference-free 的，够用"
+  default_already_on:
+    - forget_Truth_Ratio
+    - forget_quality
+    - forget_Q_A_Prob
+    - forget_Q_A_ROUGE
+    - model_utility
+    - privleak                      # 内部已经跑了 mia_min_k
+    - extraction_strength
+
+# ---------------------------------------------------------------------------
+# 资源阈值
+# ---------------------------------------------------------------------------
+resources:
+  disk_peak_gb: 80                  # 单方法 30 个 ckpt × 2.5GB；选完 A/B 立刻删
+  disk_stop_free_gb: 20             # 剩余空间低于此值 → STOP-ASK
+  vram_1b_gb: 16
+  vram_3b_gb: 42
+  cpu_ram_fisher_1b_gb: 10          # I_f + I_r
+  cpu_ram_fisher_3b_gb: 24

@@ -1,0 +1,18 @@
+# @package eval.tofu
+# utility_v4：只算 model_utility（用于操作点轨迹的 3 个 utility 检查点：第一个ckpt/A/最终权重）。
+# 跟 full_v4 的区别：不带 privleak/extraction_strength/exact_memorization/mia_min_k_plus_plus——
+# 那几个是"对A留档"专用的，首/末两个点不需要，省时间。model_utility 自己的 9 个 pre_compute
+# 子指标（retain/ra/wf 各自的 Prob/ROUGE/Truth_Ratio）跑不掉，但这就是算 model_utility 本来的成本。
+defaults:
+  - tofu_metrics:
+    - model_utility
+
+handler: TOFUEvaluator
+output_dir: ${paths.output_dir}
+metrics: {}
+overwrite: false
+forget_split: forget10
+holdout_split: holdout10
+retain_logs_path: null
+question_key: "question"
+batch_size: 32

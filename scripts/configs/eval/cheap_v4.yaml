@@ -1,0 +1,17 @@
+# @package eval.tofu
+# cheap_v4（执行清单_v4.md §4 段A第4步）：forget_Q_A_ROUGE + extraction_strength，扫层/移植/等式测试用。
+# 不能叫 tofu.yaml —— 库里已有同名文件，会被库那份静默压过（§2.8，已实测）。
+defaults:
+  - tofu_metrics:
+    - forget_Q_A_ROUGE
+    - extraction_strength
+
+handler: TOFUEvaluator
+output_dir: ${paths.output_dir}
+metrics: {}
+overwrite: false
+forget_split: forget10
+holdout_split: holdout10
+retain_logs_path: null
+question_key: "question"
+batch_size: 32

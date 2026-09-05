@@ -1,0 +1,18 @@
+date          : 2026-09-04T08:37:21+00:00
+repo_commit   : 4ad738aaf60f6a4385f6e2506d01da99e76c31f3
+python        : Python 3.11.16
+torch         : 2.4.1+cu121
+torch.cuda    : 12.1
+cxx11abi      : False
+transformers  : 4.51.3
+flash_attn    : 2.6.3
+numpy         : 2.2.3
+accelerate    : 0.34.2
+bitsandbytes  : 0.44.1
+gpu           : NVIDIA GeForce RTX 4090, 24564 MiB, 570.211.01
+attn_impl     : attn_implementation:'flash_attention_2'
+torch_dtype   : torch_dtype:bfloat16
+eval_batch    : batch_size:32
+patches       : 2fileschanged,11insertions(+),4deletions(-)
+  - 0001-evaluate_probability-bf16-upcast.patch
+  - 0002-mia_min_k_plus_plus-sigma-bf16.patch

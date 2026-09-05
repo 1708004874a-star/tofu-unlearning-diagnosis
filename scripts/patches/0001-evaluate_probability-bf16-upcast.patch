@@ -1,0 +1,29 @@
+diff --git a/src/evals/metrics/utils.py b/src/evals/metrics/utils.py
+index 71684b7..fbfeee4 100644
+--- a/src/evals/metrics/utils.py
++++ b/src/evals/metrics/utils.py
+@@ -84,7 +84,12 @@ def evaluate_probability(model, batch):
+     batch = {k: v.to(model.device) for k, v in batch.items()}
+     with torch.no_grad():
+         output = model(**batch)
+-    logits = output.logits
++    # transformers 4.51.3 no longer upcasts LlamaForCausalLM's returned `logits` to fp32 even
++    # when labels is passed (modeling_llama.py: the loss_function's internal upcast, if any,
++    # never reassigns the returned `logits`). Confirmed empirically: with our bf16 model,
++    # output.logits / avg_losses are torch.bfloat16 all the way through. Casting here restores
++    # the older-transformers convention docs/repro.md's numbers were produced under.
++    logits = output.logits.float()
+     labels = batch["labels"]
+     shifted_labels = labels[..., 1:].contiguous()
+     logits = logits[..., :-1, :].contiguous()
+@@ -95,8 +100,8 @@ def evaluate_probability(model, batch):
+     avg_losses = losses / num_token_gt
+     normalized_probs = torch.exp(-avg_losses)
+ 
+-    avg_losses = avg_losses.cpu().numpy().tolist()
+-    normalized_probs = normalized_probs.cpu().numpy().tolist()
++    avg_losses = avg_losses.float().cpu().numpy().tolist()
++    normalized_probs = normalized_probs.float().cpu().numpy().tolist()
+     return [
+         {"prob": prob, "avg_loss": avg_loss}
+         for prob, avg_loss in zip(normalized_probs, avg_losses)
