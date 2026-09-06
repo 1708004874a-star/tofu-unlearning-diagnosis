@@ -7,3 +7,12 @@ __pycache__/
 *.pyc
 results/eval_archive/
 results/unlearn_archive/
+
+# 内部工作文档，公开仓库先不放——等"完整实验流程"文档生成后再决定要不要放回来
+CLAUDE.md
+RUNBOOK-2.md
+实验事实汇总_20260905.md
+实验流程_遗忘失败分析_v3.1.md
+实验设计_v4.md
+执行清单_v4.md
+段A执行台.html
