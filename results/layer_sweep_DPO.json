@@ -1,0 +1,437 @@
+{
+  "method": "DPO",
+  "layer_results": {
+    "0": {
+      "forget_axis": {
+        "mean_recovery": 0.00588059764332006,
+        "ci_lower": -3.474696923272047e-05,
+        "ci_upper": 0.01615544521527155,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_recovery": 0.0076843405296645,
+        "normalized_ci_lower": -4.5404831303379664e-05,
+        "normalized_ci_upper": 0.021110769682313547,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.009952240725798235,
+        "ci_lower": -0.0003674126845839591,
+        "ci_upper": 0.025939335673509242,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_recovery": 0.014129011840603948,
+        "normalized_ci_lower": -0.000521608983735517,
+        "normalized_ci_upper": 0.036825594453154364,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.13893883123982365
+    },
+    "1": {
+      "forget_axis": {
+        "mean_recovery": 0.01583007784268182,
+        "ci_lower": 0.004023641482428824,
+        "ci_upper": 0.03218248664506326,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.020685603085333085,
+        "normalized_ci_lower": 0.005257804256577387,
+        "normalized_ci_upper": 0.042053750566145714,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.02365363164459902,
+        "ci_lower": 0.00714311959225857,
+        "ci_upper": 0.044573688702113846,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.03358062277508049,
+        "normalized_ci_lower": 0.010140954592894106,
+        "normalized_ci_upper": 0.06328044033531437,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.13847810131646965
+    },
+    "2": {
+      "forget_axis": {
+        "mean_recovery": 0.008546773073640228,
+        "ci_lower": -0.0007228995047181541,
+        "ci_upper": 0.020602629669609462,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_recovery": 0.011168306133343854,
+        "normalized_ci_lower": -0.0009446328927622173,
+        "normalized_ci_upper": 0.026922029322595444,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.016350059777661404,
+        "ci_lower": 0.0007159562354632806,
+        "ci_upper": 0.03605106014994856,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.023211877059437967,
+        "normalized_ci_lower": 0.0010164298078113028,
+        "normalized_ci_upper": 0.05118102242086733,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.1430987062264447
+    },
+    "3": {
+      "forget_axis": {
+        "mean_recovery": 0.016655382666840583,
+        "ci_lower": 0.004624252953940557,
+        "ci_upper": 0.033020363570872804,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.021764051857766066,
+        "normalized_ci_lower": 0.006042639974484683,
+        "normalized_ci_upper": 0.04314862765354221,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.024018533376376112,
+        "ci_lower": 0.006432234074282775,
+        "ci_upper": 0.046651316813967864,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.034098667005619525,
+        "normalized_ci_lower": 0.009131723588788918,
+        "normalized_ci_upper": 0.0662300104875579,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.14338397690533192
+    },
+    "4": {
+      "forget_axis": {
+        "mean_recovery": 0.01801334664085591,
+        "ci_lower": 0.004976653326619488,
+        "ci_upper": 0.03504849935743509,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.023538541159070964,
+        "normalized_ci_lower": 0.006503131344697987,
+        "normalized_ci_upper": 0.04579884910544632,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.02566191050745693,
+        "ci_lower": 0.007393932944260253,
+        "ci_upper": 0.04910405181698112,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.036431739082888465,
+        "normalized_ci_lower": 0.01049702966360931,
+        "normalized_ci_upper": 0.06971211294611339,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.14717067302143852
+    },
+    "5": {
+      "forget_axis": {
+        "mean_recovery": 0.030703071672038913,
+        "ci_lower": 0.011429735099892393,
+        "ci_upper": 0.05419137168202645,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.04012055786585663,
+        "normalized_ci_lower": 0.01493555281259561,
+        "normalized_ci_upper": 0.07081337289711327,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.0440208075007182,
+        "ci_lower": 0.021317336519145573,
+        "ci_upper": 0.07091139576438978,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.06249552513318134,
+        "normalized_ci_lower": 0.030263827854203063,
+        "normalized_ci_upper": 0.10067159527117008,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15604580640235463
+    },
+    "6": {
+      "forget_axis": {
+        "mean_recovery": 0.05992813920752902,
+        "ci_lower": 0.033496445235559474,
+        "ci_upper": 0.09026822600684559,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.07830976661069407,
+        "normalized_ci_lower": 0.04377073680864443,
+        "normalized_ci_upper": 0.11795600204568624,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.0764382129769953,
+        "ci_lower": 0.045254329797617426,
+        "ci_upper": 0.1106195166074588,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.10851791530996655,
+        "normalized_ci_lower": 0.06424673389296948,
+        "normalized_ci_upper": 0.15704447902844634,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.1661004353408851
+    },
+    "7": {
+      "forget_axis": {
+        "mean_recovery": 0.09283548215424504,
+        "ci_lower": 0.05899552233937544,
+        "ci_upper": 0.1285215658783806,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.12131070707059152,
+        "normalized_ci_lower": 0.07709109020511784,
+        "normalized_ci_upper": 0.16794270540461706,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.12909942487708073,
+        "ci_lower": 0.08982282310654235,
+        "ci_upper": 0.1716086934972392,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.18328006254663148,
+        "normalized_ci_lower": 0.12751979842479344,
+        "normalized_ci_upper": 0.24362968392513362,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.17206367679532725
+    },
+    "8": {
+      "forget_axis": {
+        "mean_recovery": 0.09034194279612344,
+        "ci_lower": 0.05810100227875473,
+        "ci_upper": 0.12538610388213464,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.11805232982492275,
+        "normalized_ci_lower": 0.07592219595773912,
+        "normalized_ci_upper": 0.16384550999041547,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.12171380857840003,
+        "ci_lower": 0.08336940529718477,
+        "ci_upper": 0.16191151501371887,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.17279483987072525,
+        "normalized_ci_lower": 0.1183580006796465,
+        "normalized_ci_upper": 0.2298627792260796,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.1704394698634096
+    },
+    "9": {
+      "forget_axis": {
+        "mean_recovery": 0.04830665628912378,
+        "ci_lower": 0.02373035978454764,
+        "ci_upper": 0.07641015293130274,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.06312365158951974,
+        "normalized_ci_lower": 0.031009121272403163,
+        "normalized_ci_upper": 0.0998472724476986,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.08030474516914023,
+        "ci_lower": 0.04861177537347558,
+        "ci_upper": 0.11483561904301122,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.11400715945407967,
+        "normalized_ci_lower": 0.06901323719634274,
+        "normalized_ci_upper": 0.1630300015730029,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.16571449209870065
+    },
+    "10": {
+      "forget_axis": {
+        "mean_recovery": 0.03502398140683528,
+        "ci_lower": 0.014540470971839274,
+        "ci_upper": 0.05967101689131387,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.04576681081734606,
+        "normalized_ci_lower": 0.019000437912333024,
+        "normalized_ci_upper": 0.07797377772735027,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.05898438789560727,
+        "ci_lower": 0.032499190837863436,
+        "ci_upper": 0.08992313472458582,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.08373904309081791,
+        "normalized_ci_lower": 0.046138499339945425,
+        "normalized_ci_upper": 0.12766220897113525,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.1599087702060371
+    },
+    "11": {
+      "forget_axis": {
+        "mean_recovery": 0.009192513172548836,
+        "ci_lower": 0.0012796425987405013,
+        "ci_upper": 0.02013794707119846,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.012012112684079314,
+        "normalized_ci_lower": 0.0016721445814536669,
+        "normalized_ci_upper": 0.026314815644500052,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.029497278173850717,
+        "ci_lower": 0.009713664220441995,
+        "ci_upper": 0.05410834584180825,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.041876739526966945,
+        "normalized_ci_lower": 0.013790309194442034,
+        "normalized_ci_upper": 0.07681661649247179,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15559970146722316
+    },
+    "12": {
+      "forget_axis": {
+        "mean_recovery": 0.01295317151517963,
+        "ci_lower": 0.002598759815689418,
+        "ci_upper": 0.027685408415753343,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.0169262695560981,
+        "normalized_ci_lower": 0.003395871744643142,
+        "normalized_ci_upper": 0.036177293342140183,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.03504128447118462,
+        "ci_lower": 0.014013236139933933,
+        "ci_upper": 0.06057407923806094,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.049747462591006465,
+        "normalized_ci_lower": 0.019894331819473282,
+        "normalized_ci_upper": 0.08599589844824618,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15889845435758407
+    },
+    "13": {
+      "forget_axis": {
+        "mean_recovery": 0.011371352349759823,
+        "ci_lower": 0.0020057909211431595,
+        "ci_upper": 0.025724870865317124,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.014859262448879501,
+        "normalized_ci_lower": 0.0026210227946613126,
+        "normalized_ci_upper": 0.03361540438586046,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.03549953839035695,
+        "ci_lower": 0.014664510014247149,
+        "ci_upper": 0.06062607773173795,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.05039803719308632,
+        "normalized_ci_lower": 0.020818933277092205,
+        "normalized_ci_upper": 0.08606971974669522,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15734064933308986
+    },
+    "14": {
+      "forget_axis": {
+        "mean_recovery": 0.020329228258001607,
+        "ci_lower": 0.005790296566690258,
+        "ci_upper": 0.03988876874878644,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.026564768092442723,
+        "normalized_ci_lower": 0.007566341600795944,
+        "normalized_ci_upper": 0.052123763767939126,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.04410655905429681,
+        "ci_lower": 0.02190306418367676,
+        "ci_upper": 0.07056012196497502,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.06261726502565819,
+        "normalized_ci_lower": 0.03109537457172548,
+        "normalized_ci_upper": 0.10017289836381336,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15288171326293112
+    },
+    "15": {
+      "forget_axis": {
+        "mean_recovery": 0.1593039344398175,
+        "ci_lower": 0.1191516322100502,
+        "ci_upper": 0.2014179880062379,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.20816688272176695,
+        "normalized_ci_lower": 0.155698752423136,
+        "normalized_ci_upper": 0.2631984880648929,
+        "denom": 0.7652703079228073
+      },
+      "retain_axis": {
+        "mean_recovery": 0.1920124299003438,
+        "ci_lower": 0.1495664775734164,
+        "ci_upper": 0.23637340569818055,
+        "significant": true,
+        "exact_no_change": false,
+        "normalized_recovery": 0.27259649061467983,
+        "normalized_ci_lower": 0.21233675820504538,
+        "normalized_ci_upper": 0.3355749463792844,
+        "denom": 0.7043833523585485
+      },
+      "norm_delta": 0.15946523820825345
+    }
+  },
+  "joint_restore_exploratory": {
+    "forget_axis": {
+      "mean_recovery": 0.7633839632109578,
+      "ci_lower": 0.7175658746402491,
+      "ci_upper": 0.8055222391496827,
+      "significant": true,
+      "exact_no_change": false,
+      "normalized_recovery": 0.9975350608898317,
+      "normalized_ci_lower": 0.937663289966073,
+      "normalized_ci_upper": 1.0525983182806768,
+      "denom": 0.7652703079228073
+    },
+    "retain_axis": {
+      "mean_recovery": 0.7071064408326457,
+      "ci_lower": 0.6584424797692431,
+      "ci_upper": 0.7548649028140043,
+      "significant": true,
+      "exact_no_change": false,
+      "normalized_recovery": 1.0038659182744443,
+      "normalized_ci_lower": 0.9347785940206031,
+      "normalized_ci_upper": 1.071667722251561,
+      "denom": 0.7043833523585485
+    }
+  },
+  "sum_of_singles": {
+    "forget": 0.6352156511285414,
+    "retain": 0.9463548530198663
+  },
+  "denom": {
+    "forget": 0.7652703079228073,
+    "retain": 0.7043833523585485
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "0": {
+    "forget_axis": {
+      "mean_recovery": 0.061833701624882186,
+      "ci_lower": 0.04215643551409958,
+      "ci_upper": 0.08283260217190357,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.024210576960896724,
+      "ci_lower": 0.0030772942205297762,
+      "ci_upper": 0.04579772606320841,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.33410840352663557
+  },
+  "1": {
+    "forget_axis": {
+      "mean_recovery": 0.07824718403166198,
+      "ci_lower": 0.0570059351854534,
+      "ci_upper": 0.10112799500040981,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0539761102079839,
+      "ci_lower": 0.030944920431675762,
+      "ci_upper": 0.07865432588411941,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.3326156988774818
+  },
+  "2": {
+    "forget_axis": {
+      "mean_recovery": 0.07152312258102965,
+      "ci_lower": 0.052295398610588385,
+      "ci_upper": 0.09156028184264156,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.03921775326264153,
+      "ci_lower": 0.02113156535590266,
+      "ci_upper": 0.05932908326043797,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.31593068362326593
+  },
+  "3": {
+    "forget_axis": {
+      "mean_recovery": 0.0524914119376003,
+      "ci_lower": 0.03411971632901979,
+      "ci_upper": 0.07106017192802078,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.043376369322872005,
+      "ci_lower": 0.0224537001557965,
+      "ci_upper": 0.06533354225308696,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.3095393991369817
+  },
+  "4": {
+    "forget_axis": {
+      "mean_recovery": 0.044309182371996145,
+      "ci_lower": 0.027313345388555624,
+      "ci_upper": 0.0629086669923466,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.04646503757928379,
+      "ci_lower": 0.025516463126422258,
+      "ci_upper": 0.06904327583115856,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.30243482352236867
+  },
+  "5": {
+    "forget_axis": {
+      "mean_recovery": 0.02285853535628096,
+      "ci_lower": 0.00796917808028751,
+      "ci_upper": 0.038309515537311774,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.03968298321482907,
+      "ci_lower": 0.01592699267389464,
+      "ci_upper": 0.06446431069854879,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.30897182442582294
+  },
+  "6": {
+    "forget_axis": {
+      "mean_recovery": 0.012859887668440664,
+      "ci_lower": -0.004189758677468549,
+      "ci_upper": 0.02980325889179749,
+      "significant": false,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.018969751350544593,
+      "ci_lower": -0.003920824487188017,
+      "ci_upper": 0.04185738528827987,
+      "significant": false,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.3486681338089924
+  },
+  "7": {
+    "forget_axis": {
+      "mean_recovery": -0.0005132773975619168,
+      "ci_lower": -0.016966510719386943,
+      "ci_upper": 0.015835716140532457,
+      "significant": false,
+      "exact_no_change": false
+    },
+    "retain_axis": {
+      "mean_recovery": 0.029751429660960074,
+      "ci_lower": 0.0022152145967265727,
+      "ci_upper": 0.056026912479416865,
+      "significant": true,
+      "exact_no_change": false
+    },
+    "norm_delta": 0.6118143546670551
+  },
+  "8": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "9": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "10": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "11": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "12": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "13": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "14": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  },
+  "15": {
+    "forget_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "retain_axis": {
+      "mean_recovery": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "significant": false,
+      "exact_no_change": true
+    },
+    "norm_delta": 0.0
+  }
+}
