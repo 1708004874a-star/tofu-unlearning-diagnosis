@@ -66,7 +66,8 @@ training:
   steps_per_epoch: 12               # 已核实
   total_steps: 120                  # 已核实 = max_steps
   expected_checkpoints: 12          # = floor(120 / 10)。step 120 与训练结束重合（save_steps 从 12 改成 10 后回填）
-  verified_from_trainer_state: false   # 仍要从 trainer_state.json 确认一次
+  verified_from_trainer_state: true    # 2026-09-05 实测确认：NPO 顶层 trainer_state.json
+    # max_steps=120, global_step=120, epoch=9.24, num_train_epochs=10（名义值）—— 跟 §2.14 一致
   # 段 A 一次训 5 个；RMU_downproj 在段 C 补训
   method_order: [NPO, RMU, DPO, GA, GD]
   analyze_in_segment_A: [NPO, RMU, DPO]
@@ -145,7 +146,10 @@ operating_point:
 metrics:
   eval_full_dataset: true           # 全部 400 条，不许抽子集（会破坏与官方日志的可比性）
   configs:
-    cheap: ["forget_Q_A_ROUGE", "extraction_strength"]
+    cheap: ["forget_Q_A_ROUGE", "extraction_strength", "retain_Q_A_ROUGE"]
+      # retain_Q_A_ROUGE 是 2026-09-05 补的：扫层要用它做 catastrophic 轴的显著性检验
+      # （见 restoration.significance.metric_for_catastrophic_axis）。Gate 1a 时的 cheap 只有
+      # 前两项，不影响已有结果——它加进来只影响之后新跑的 cheap 评测
     full:  "库默认全部 + enabled_beyond_default"
   enabled_beyond_default: [exact_memorization, mia_min_k_plus_plus]
   dropped:
@@ -208,7 +212,80 @@ restoration:
     n_tests_per_method: 16
     ci_effective: 0.996875          # 1 − 0.05/16，Bonferroni
     do_not_use: "同一模型评多遍的离散度（预期就是 0，撑不起判断）"
+    metric_for_forgetting_axis: forget_Q_A_ROUGE   # 原有未变：这层是否解释了"遗忘"
+    metric_for_catastrophic_axis: retain_Q_A_ROUGE  # 2026-09-05 新增：这层是否解释了"utility 损伤"
+      # 起因：NPO/DPO/GA/GD 全判不可行；"不可行就不扫层"若套到它们身上，主分析没有对象
+      # （执行清单_v4.md §3 末尾【2026-09-05 澄清】）。改法：不可行方法仍扫层，问题从
+      # "哪层拿回被遗忘的答案"改述成"哪层拿回被搞坏的 utility"。
+      # model_utility 的 agg_value 是 9 个子指标的调和平均（含 KS 检验 p 值），实测确认没有
+      # value_by_index，套不进配对 bootstrap。retain_Q_A_ROUGE 结构上跟 forget_Q_A_ROUGE 完全
+      # 一样（400 条 value_by_index，agg_value = rougeL_recall 均值，已实测确认），且本来就在
+      # metrics.axis_mapping.catastrophic 里——直接复用同一套 bootstrap，不必另起统计方法。
+    model_utility_role: "只画不判——跟 forget_quality / privleak 同一待遇（记录不设判据），
+                        因为它没有逐样本结构，撑不起显著性结论"
+    rmu_rerun_for_comparability: true  # 阳性对照 RMU 的 16 层 sweep 补跑 retain_Q_A_ROUGE 这条，
+      # 保证段 A 三个核心分析对象（NPO/RMU/DPO）在"catastrophic 轴"上有同一套可比数据，
+      # 不是只有判不可行的方法才测
+  no_topk_prefilter_for_sweep: true  # 2026-09-05：16 层全测，不按任一轴的恢复量挑"前三层"再测——
+    # 用某个轴筛测量点，会把"压制的层和损伤的层是不是同一批"这个问题预先答掉，那正是要测的东西。
+    # transplant_top_k / full_eval_top_k 是拿到全量数据之后、给第 10 步和段 E 用的排序，
+    # 不是 sweep 本身的筛选条件
+  exploratory_joint_restore:  # 2026-09-05 新增
+    what: "16 层（0-15）全部一起换回 target，embed_tokens 和 model.norm 保持遗忘后权重；
+           跟 16 个单层换回的恢复量一起报，看单层加总能不能解释联合量"
+    status: "探索性——不进 criteria/主判据，不进跨方法比较，只是数据，报告里必须单独标注"
+    why_guardrail: "联合换回把'要不要做二分去定位交互'从预注册变成了看数据决定——如果不设边界，
+                    '先看数据、再决定测哪里'会不知不觉变成没有校正的多重比较"
+    bonferroni_denominator: "继续锁 16（restoration.significance.n_tests_per_method），
+                             不因联合换回或它引出的任何后续探索性二分而增加"
+    reporting_rule: "联合换回本身及其引出的任何后续二分，跟 16 层单测的确认性结论分开报，
+                     不得混进同一张判据表"
   transplant_top_k: 1               # 段 A；段 E 升到 3
+  transplant_layer_selection_axis: forget_Q_A_ROUGE  # 2026-09-06 决定：第 10 步"每方法恢复量
+    # 最高的那 1 层"按 forget 轴（不是 retain 轴）选。清单原文写这句话时 retain 轴还不存在
+    # （见上面 metric_for_catastrophic_axis 的 2026-09-05 追加），移植操作本身测的是"这层能否
+    # 单独复现遗忘效果"，跟 forget 轴语义直接对应；retain 轴对应的是"哪层扛住了 utility 损伤"，
+    # 跟移植要回答的问题不是一回事。forget 轴、retain 轴选出的层可能不是同一层，本次不都测，
+    # 只按 forget 轴的单层恢复量排名取每方法第 1
+  transplant_damage_definition: "damage = metric(target 自评) − metric(移植后)；跟 recovery_definition
+    对称（recovery 是'遗忘后 vs 换回后'，damage 是'target vs 移植后'），CI 下界 > 0 才算显著——
+    两边都是'正数=预期方向'，图④必要性(recovery)×充分性(damage)散点两轴口径统一"
+  transplant_normalization: "2026-09-06 决定：归一化分母跟第9步 recovery 用同一个，不新算——
+    denom = agg_value(target) − agg_value(该方法遗忘后)，就是 load_baselines()/compute_denom()
+    已经在算的那个数。damage_normalized = damage / denom。原始值和归一化值都存盘"
+  transplant_significance:
+    method: "同 restoration.significance——逐样本配对 bootstrap，CI 下界 > 0 才算显著"
+    bootstrap_n: 20000               # 与 restoration.significance.bootstrap_n 一致，没有理由不同
+    alpha: 0.05                      # 2026-09-06 决定：95% CI，不做 Bonferroni。本步确认性检验
+      # 每方法每轴只有 top-1 一层，不是第9步"16层同时检验、要控制族错误率"的场景，
+      # Bonferroni 分母 n=1（即不校正）
+    n_tests_per_method_per_axis: 1   # 只有 top-1 那一层算确认性；锚点层和全16层对照都是探索性，
+                                      # 不进这个分母、不与 top-1 的结论混排
+  transplant_equality_test:
+    what: "全16层 + embed_tokens + model.norm 一起移植进 target（等价于把该方法遗忘后的权重整个
+           搬进 target 骨架）→ cheap 三指标（含 value_by_index）必须与该方法自己的遗忘后自评
+           逐位相同"
+    why: "transplant 是新代码路径：build_variant 的 skeleton/source 方向和 §4段A7 两个等式测试
+          相反的那一个方向，当时只验证过 RMU 的 Δθ≠0 集合，没覆盖'target 骨架 + 任意层集合'
+          这个更通用的调用方式——尤其 NPO/DPO 从没跑过 transplant 方向，不能假定它对"
+    when: "每方法测量前必须先跑，不过 = 代码有 bug，硬停，不许往下走（同 §4段A7 的处理方式）"
+  transplant_joint16_control:
+    what: "16层（0-15）全部移植进 target，embed_tokens/model.norm 保持 target 自己的权重——
+           跟第9步 exploratory_joint_restore 的层范围镜像对称，方向相反"
+    purpose: "阳性对照：某方法的 top-1 单层移植若测出零效果，用这个判断是'这层确实不充分'
+              还是'transplant 代码没生效'"
+    status: "探索性——不进 transplant_significance 的确认性分母，报告里单独标注，不与 top-1 混排"
+  transplant_anchor_layer:
+    layer: 7
+    why: "2026-09-06 实测：NPO、DPO 的 forget 轴 16 层 sweep 里都是仅次于 top-1 的第二名
+          （NPO layer7 norm=5.12% vs top1 layer8 norm=5.85%；DPO layer7 norm=12.13% vs
+          top1 layer15 norm=20.82%），且是 RMU 理论因果边界层（§2.13：loss 计算图止于
+          layer 7 输出）——三个方法各自独立的证据都指向这一层，专门测一次"
+    status: "探索性，跟 transplant_joint16_control 一样不进确认性分母"
+  transplant_top1_tie_note: "2026-09-06：NPO 的 top-1(layer 8, norm 5.85%) 和次高(layer 7,
+    norm 5.12%) 差距在 bootstrap 噪声量级内，报告里写'恢复量最高的层，与次高层无显著差异'，
+    不写死是 layer 8。RMU 同样接近(layer1 raw 0.0782 vs layer2 raw 0.0715)，表述同样要谨慎。
+    DPO 的 top-1(layer 15, norm 20.82%) 甩开次高(layer 7, norm 12.13%) 一大截，可以写强结论"
   full_eval_top_k: 3                # 段 E
 
 # ---------------------------------------------------------------------------

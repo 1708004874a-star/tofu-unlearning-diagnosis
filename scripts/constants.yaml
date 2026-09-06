@@ -20,16 +20,22 @@ env:
   torch_dtype: "bfloat16"                   # 已查证：同上。ckpt ≈ 2.5 GB 的前提
   must_record: ["attn_implementation", "torch_dtype", "eval batch_size"]  # 快照必须含这三项
 
-# 物理布局（AutoDL：系统盘 30 G 可写 + 数据盘 50 G）。逻辑路径见下面的 paths
+# 物理布局（RunPod，2026-09-04 从 AutoDL 迁移）。逻辑路径见下面的 paths
 disk_layout:
-  system_disk: "/root"                        # 30 G。镜像层是只读下层，不占这 30 G
-    # conda 环境 /root/envs/unlearning、repo /root/open-unlearning、HF 缓存 /root/.cache/huggingface，共约 14 G
-  data_disk: "/root/autodl-tmp"               # 50 G，全部留给 ckpt
-    # results_dir "../results" 相对 cwd=open-unlearning/ 解析成 /root/results，在系统盘（体积小，无所谓）
-  temp_dir: "/root/tmp_restore"               # 扫层/移植的临时模型目录，放系统盘：那边有 16 G 空闲，与 ckpt 峰值完全错开
-  saves_symlink: "ln -s /root/autodl-tmp/saves /root/open-unlearning/saves"
-    # 库把 ckpt 写到 open-unlearning/saves/，路径在库配置里。§1.7 不许改库，所以用软链把它指到数据盘，库无感知
-  why: "固定开销若放数据盘，ckpt 只剩 36 G、峰值 35 G，缓冲仅 1 G；放系统盘则数据盘 50 G 全给 ckpt，缓冲 15 G"
+  platform: "RunPod"
+  volume: "/workspace"                        # network volume，85 G 配额，跨停机保留 —— 一切要留的东西都在这
+    # conda /workspace/miniconda3、环境 /workspace/envs/unlearning、repo /workspace/open-unlearning、
+    # HF 缓存 /workspace/.cache/huggingface、结果 /workspace/results，固定开销共约 14 G；其余给 ckpt
+  volume_quota_gb: 85
+  container_disk: "/root"                     # 停止即清空。只放 temp_dir 和日志，不放任何要活过停机的东西
+  temp_dir: "/root/tmp_restore"               # 扫层/移植的临时模型目录，故意留在 container disk：用完即删，与 ckpt 峰值错开
+  saves_symlink: null                         # RunPod 不需要：repo 本身就在 volume 上，库写的 open-unlearning/saves/ 自然落在卷里
+    # （AutoDL 时代的 `ln -s /root/autodl-tmp/saves ...` 已作废）
+  mount_check: "mountpoint -q /workspace"     # 卷没挂上时一切会写进 container disk、一停机全没（remote_setup.sh:45）
+  free_space_method: "du"                     # 判超预算只能用 du -s /workspace 的实占。/workspace 是共享 MooseFS，
+                                              # df 的 Avail 报的是整个机房集群剩余量（几百 T），永远不会告警（remote_setup.sh:46-47 实测）
+  why: "AutoDL 是 30 G 系统盘 + 50 G 数据盘、必须软链且缓冲只有 1 G；RunPod 单卷 85 G 全部可用，
+        固定开销 14 G 之外还剩 71 G 给 ckpt，峰值约 56.5 G，缓冲 28.5 G"
 
 paths:
   cwd: "open-unlearning/"           # 所有命令的工作目录
@@ -47,9 +53,10 @@ training:
   learning_rate: 1.0e-5             # 不许调（例外：RMU_downproj 的 lr_ladder）
   num_train_epochs: 10              # 不许砍。砍了 NPO 可能永远越不过阈值
   save_strategy: steps
-  save_steps: 10                    # 12 个 ckpt ≈ 30 GB/方法（RunPod 85G 持久卷，不是 AutoDL 50G 单盘；
-                                     # dd 实测写 2.5G 用 1.66s/1.6GB/s，I/O 不是瓶颈）。10 整除 120，
-                                     # 比原来的 12 分辨率更高、操作点 overshoot 更小
+  save_steps: 10                    # 12 个 ckpt ≈ 30 GB/方法，加最终权重 32.5 GB（RunPod 85G 卷，不是 AutoDL 50G 单盘；
+                                    # dd 实测写 2.5G 用 1.66s/1.6GB/s，I/O 不是瓶颈）。10 整除 120，
+                                    # 比 AutoDL 时代的 12 分辨率更高、操作点 overshoot 更小。
+                                    # 权威值在 scripts/lib/run_pipeline.py:SAVE_STEPS —— 那里是硬编码，不读本文件
   eval_strategy: "no"               # 评测统一离线做
   # 名义值，不要当真：400/32 = 12.5 步/epoch，transformers >= 4.46 会把余数凑成第 13 步。
   # Gate 1b 跑完从 trainer_state.json 读 max_steps 回填，并把 verified 改 true。
@@ -59,7 +66,8 @@ training:
   steps_per_epoch: 12               # 已核实
   total_steps: 120                  # 已核实 = max_steps
   expected_checkpoints: 12          # = floor(120 / 10)。step 120 与训练结束重合（save_steps 从 12 改成 10 后回填）
-  verified_from_trainer_state: false   # 仍要从 trainer_state.json 确认一次
+  verified_from_trainer_state: true    # 2026-09-05 实测确认：NPO 顶层 trainer_state.json
+    # max_steps=120, global_step=120, epoch=9.24, num_train_epochs=10（名义值）—— 跟 §2.14 一致
   # 段 A 一次训 5 个；RMU_downproj 在段 C 补训
   method_order: [NPO, RMU, DPO, GA, GD]
   analyze_in_segment_A: [NPO, RMU, DPO]
@@ -104,11 +112,12 @@ gate_1b:
 # ---------------------------------------------------------------------------
 operating_point:
   trajectory_metric: forget_Q_A_ROUGE   # 轨迹只跑这一个指标；utility 另见 utility_eval_points
-  eval_all_checkpoints: true            # 全部 10 个 ckpt + 最终权重全评，不做粗筛/细评两段式
-    # 两段式当初只为省 GPU：16 个 ckpt 时评 9 个。现在只剩 10 个，全评和"粗筛 8+细评 1"成本几乎一样，
+  eval_all_checkpoints: true            # 全部 12 个 ckpt + 最终权重全评，不做粗筛/细评两段式
+    # 两段式当初只为省 GPU：30 个 ckpt 时评 9 个。现在只剩 12 个，全评和"粗筛 8+细评 1"成本几乎一样，
     # 却要多写"找越线区间 / 首点已越线 / 从未越线"三段可能出错的逻辑。砍掉是净赚。
-  lost_protection: "原 refine_interval_if_first_coarse_already_below 随之失效：第 12 步之前没有 ckpt，
-                    遗忘极快的方法（最可能是 GA）A 只能取 step 12，overshoot 很大。50 G 下无解，写进局限"
+  lost_protection: "原 refine_interval_if_first_coarse_already_below 随之失效：第 10 步之前没有 ckpt，
+                    遗忘极快的方法（最可能是 GA）A 只能取 step 10，overshoot 很大。85 G 卷下同样无解
+                    （要覆盖第 10 步之前就得 save_steps 再降一档 = 30 个 ckpt = 75 G，装不下），写进局限"
   bootstrap_n: 10000
   bootstrap_ci: 0.95
   threshold_side: upper             # retain90 逐样本 forget_Q_A_ROUGE 均值的 95% CI 上界
@@ -129,7 +138,7 @@ operating_point:
   utility_floor_check: 0.90         # 只用于 feasible_check 的敏感性复核，两档一并报告
   feasibility_rule: "feasible = A 存在 且 model_utility(A) >= baseline × 0.80。A 不存在 → never_crossed"
   overshoot_flag: 0.10              # 只标记，不重跑
-  overshoot_must_appear_on_figures: true   # save_steps=12 下 A 更深入遗忘、恢复量偏大；跨方法比恢复量的前提是 overshoot 相当
+  overshoot_must_appear_on_figures: true   # save_steps=10 下 A 仍比理想点更深入遗忘、恢复量偏大；跨方法比恢复量的前提是 overshoot 相当
 
 # ---------------------------------------------------------------------------
 # 评测配置（两份，都放 scripts/configs/eval/，都不得叫 tofu.yaml）
@@ -137,7 +146,10 @@ operating_point:
 metrics:
   eval_full_dataset: true           # 全部 400 条，不许抽子集（会破坏与官方日志的可比性）
   configs:
-    cheap: ["forget_Q_A_ROUGE", "extraction_strength"]
+    cheap: ["forget_Q_A_ROUGE", "extraction_strength", "retain_Q_A_ROUGE"]
+      # retain_Q_A_ROUGE 是 2026-09-05 补的：扫层要用它做 catastrophic 轴的显著性检验
+      # （见 restoration.significance.metric_for_catastrophic_axis）。Gate 1a 时的 cheap 只有
+      # 前两项，不影响已有结果——它加进来只影响之后新跑的 cheap 评测
     full:  "库默认全部 + enabled_beyond_default"
   enabled_beyond_default: [exact_memorization, mia_min_k_plus_plus]
   dropped:
@@ -190,7 +202,7 @@ restoration:
   eval_config: cheap
   recovery_definition: "recovery = metric(换层后) − metric(遗忘后)；归一化 = recovery / (metric(target) − metric(遗忘后))"
   must_record_layer_delta_norm: true  # 没有这个对照，结论是平凡的（"改得最多的层最重要"）
-  temp_model_policy: "换层后写临时目录（disk_layout.temp_dir，系统盘）→ eval → 立即删；任一时刻最多一个。或进程内调评测器不落盘"
+  temp_model_policy: "换层后写临时目录（disk_layout.temp_dir，container disk）→ eval → 立即删；任一时刻最多一个。或进程内调评测器不落盘"
   temp_model_hard_constraint: true    # 50 G 盘下这不再是建议：每份换层模型是完整 2.5 G 拷贝，
                                       # 先全写出来再统一评测 = 16 × 2.5 = 40 GB，直接爆盘
   output_dir_isolation: "每个变体各用自己的 output_dir。库按目录缓存、不认模型，共用会静默返回上一个结果"
@@ -200,7 +212,80 @@ restoration:
     n_tests_per_method: 16
     ci_effective: 0.996875          # 1 − 0.05/16，Bonferroni
     do_not_use: "同一模型评多遍的离散度（预期就是 0，撑不起判断）"
+    metric_for_forgetting_axis: forget_Q_A_ROUGE   # 原有未变：这层是否解释了"遗忘"
+    metric_for_catastrophic_axis: retain_Q_A_ROUGE  # 2026-09-05 新增：这层是否解释了"utility 损伤"
+      # 起因：NPO/DPO/GA/GD 全判不可行；"不可行就不扫层"若套到它们身上，主分析没有对象
+      # （执行清单_v4.md §3 末尾【2026-09-05 澄清】）。改法：不可行方法仍扫层，问题从
+      # "哪层拿回被遗忘的答案"改述成"哪层拿回被搞坏的 utility"。
+      # model_utility 的 agg_value 是 9 个子指标的调和平均（含 KS 检验 p 值），实测确认没有
+      # value_by_index，套不进配对 bootstrap。retain_Q_A_ROUGE 结构上跟 forget_Q_A_ROUGE 完全
+      # 一样（400 条 value_by_index，agg_value = rougeL_recall 均值，已实测确认），且本来就在
+      # metrics.axis_mapping.catastrophic 里——直接复用同一套 bootstrap，不必另起统计方法。
+    model_utility_role: "只画不判——跟 forget_quality / privleak 同一待遇（记录不设判据），
+                        因为它没有逐样本结构，撑不起显著性结论"
+    rmu_rerun_for_comparability: true  # 阳性对照 RMU 的 16 层 sweep 补跑 retain_Q_A_ROUGE 这条，
+      # 保证段 A 三个核心分析对象（NPO/RMU/DPO）在"catastrophic 轴"上有同一套可比数据，
+      # 不是只有判不可行的方法才测
+  no_topk_prefilter_for_sweep: true  # 2026-09-05：16 层全测，不按任一轴的恢复量挑"前三层"再测——
+    # 用某个轴筛测量点，会把"压制的层和损伤的层是不是同一批"这个问题预先答掉，那正是要测的东西。
+    # transplant_top_k / full_eval_top_k 是拿到全量数据之后、给第 10 步和段 E 用的排序，
+    # 不是 sweep 本身的筛选条件
+  exploratory_joint_restore:  # 2026-09-05 新增
+    what: "16 层（0-15）全部一起换回 target，embed_tokens 和 model.norm 保持遗忘后权重；
+           跟 16 个单层换回的恢复量一起报，看单层加总能不能解释联合量"
+    status: "探索性——不进 criteria/主判据，不进跨方法比较，只是数据，报告里必须单独标注"
+    why_guardrail: "联合换回把'要不要做二分去定位交互'从预注册变成了看数据决定——如果不设边界，
+                    '先看数据、再决定测哪里'会不知不觉变成没有校正的多重比较"
+    bonferroni_denominator: "继续锁 16（restoration.significance.n_tests_per_method），
+                             不因联合换回或它引出的任何后续探索性二分而增加"
+    reporting_rule: "联合换回本身及其引出的任何后续二分，跟 16 层单测的确认性结论分开报，
+                     不得混进同一张判据表"
   transplant_top_k: 1               # 段 A；段 E 升到 3
+  transplant_layer_selection_axis: forget_Q_A_ROUGE  # 2026-09-06 决定：第 10 步"每方法恢复量
+    # 最高的那 1 层"按 forget 轴（不是 retain 轴）选。清单原文写这句话时 retain 轴还不存在
+    # （见上面 metric_for_catastrophic_axis 的 2026-09-05 追加），移植操作本身测的是"这层能否
+    # 单独复现遗忘效果"，跟 forget 轴语义直接对应；retain 轴对应的是"哪层扛住了 utility 损伤"，
+    # 跟移植要回答的问题不是一回事。forget 轴、retain 轴选出的层可能不是同一层，本次不都测，
+    # 只按 forget 轴的单层恢复量排名取每方法第 1
+  transplant_damage_definition: "damage = metric(target 自评) − metric(移植后)；跟 recovery_definition
+    对称（recovery 是'遗忘后 vs 换回后'，damage 是'target vs 移植后'），CI 下界 > 0 才算显著——
+    两边都是'正数=预期方向'，图④必要性(recovery)×充分性(damage)散点两轴口径统一"
+  transplant_normalization: "2026-09-06 决定：归一化分母跟第9步 recovery 用同一个，不新算——
+    denom = agg_value(target) − agg_value(该方法遗忘后)，就是 load_baselines()/compute_denom()
+    已经在算的那个数。damage_normalized = damage / denom。原始值和归一化值都存盘"
+  transplant_significance:
+    method: "同 restoration.significance——逐样本配对 bootstrap，CI 下界 > 0 才算显著"
+    bootstrap_n: 20000               # 与 restoration.significance.bootstrap_n 一致，没有理由不同
+    alpha: 0.05                      # 2026-09-06 决定：95% CI，不做 Bonferroni。本步确认性检验
+      # 每方法每轴只有 top-1 一层，不是第9步"16层同时检验、要控制族错误率"的场景，
+      # Bonferroni 分母 n=1（即不校正）
+    n_tests_per_method_per_axis: 1   # 只有 top-1 那一层算确认性；锚点层和全16层对照都是探索性，
+                                      # 不进这个分母、不与 top-1 的结论混排
+  transplant_equality_test:
+    what: "全16层 + embed_tokens + model.norm 一起移植进 target（等价于把该方法遗忘后的权重整个
+           搬进 target 骨架）→ cheap 三指标（含 value_by_index）必须与该方法自己的遗忘后自评
+           逐位相同"
+    why: "transplant 是新代码路径：build_variant 的 skeleton/source 方向和 §4段A7 两个等式测试
+          相反的那一个方向，当时只验证过 RMU 的 Δθ≠0 集合，没覆盖'target 骨架 + 任意层集合'
+          这个更通用的调用方式——尤其 NPO/DPO 从没跑过 transplant 方向，不能假定它对"
+    when: "每方法测量前必须先跑，不过 = 代码有 bug，硬停，不许往下走（同 §4段A7 的处理方式）"
+  transplant_joint16_control:
+    what: "16层（0-15）全部移植进 target，embed_tokens/model.norm 保持 target 自己的权重——
+           跟第9步 exploratory_joint_restore 的层范围镜像对称，方向相反"
+    purpose: "阳性对照：某方法的 top-1 单层移植若测出零效果，用这个判断是'这层确实不充分'
+              还是'transplant 代码没生效'"
+    status: "探索性——不进 transplant_significance 的确认性分母，报告里单独标注，不与 top-1 混排"
+  transplant_anchor_layer:
+    layer: 7
+    why: "2026-09-06 实测：NPO、DPO 的 forget 轴 16 层 sweep 里都是仅次于 top-1 的第二名
+          （NPO layer7 norm=5.12% vs top1 layer8 norm=5.85%；DPO layer7 norm=12.13% vs
+          top1 layer15 norm=20.82%），且是 RMU 理论因果边界层（§2.13：loss 计算图止于
+          layer 7 输出）——三个方法各自独立的证据都指向这一层，专门测一次"
+    status: "探索性，跟 transplant_joint16_control 一样不进确认性分母"
+  transplant_top1_tie_note: "2026-09-06：NPO 的 top-1(layer 8, norm 5.85%) 和次高(layer 7,
+    norm 5.12%) 差距在 bootstrap 噪声量级内，报告里写'恢复量最高的层，与次高层无显著差异'，
+    不写死是 layer 8。RMU 同样接近(layer1 raw 0.0782 vs layer2 raw 0.0715)，表述同样要谨慎。
+    DPO 的 top-1(layer 15, norm 20.82%) 甩开次高(layer 7, norm 12.13%) 一大截，可以写强结论"
   full_eval_top_k: 3                # 段 E
 
 # ---------------------------------------------------------------------------
@@ -235,7 +320,8 @@ relearning:
   gradient_accumulation_steps: 1
   max_steps: 200
   save_steps: 10                    # 逐个评完即删
-  hard_constraint_under_50gb: "每存一个评一个、评完立刻删，绝不允许攒着。20 个 ckpt 攒起来 = 50 GB，直接爆盘"
+  hard_constraint: "每存一个评一个、评完立刻删，绝不允许攒着。20 个 ckpt 攒起来 = 50 GB，
+                    叠在 14 G 固定开销和已保留的各方法 A 之上会爆 85 G 卷"
   eval_config: cheap                # 照常评全部 400 条，只对 held-out 的 value_by_index 取平均
   recovery_speed: "首个 held-out ROUGE >= 遗忘后 + 0.5 × (target − 遗忘后) 的步数；200 步内未达记 >200"
 
@@ -254,16 +340,18 @@ dropped:
 # 资源
 # ---------------------------------------------------------------------------
 resources:
-  system_disk_gb: 30                # conda 环境 + repo + HF 缓存，约 14 G；见顶部 disk_layout
-  data_disk_gb: 50                  # 全部留给 ckpt 和 results
-  disk_peak_gb: 40                  # 实算约 37.5 G：当前方法 10 ckpt + 1 份最终权重(27.5 G) + 4 个方法的 A(10 G)。
+  volume_quota_gb: 85               # RunPod network volume /workspace，跨停机保留。见顶部 disk_layout
+  volume_fixed_overhead_gb: 14      # conda + 环境 + repo + HF 缓存 + results，长期占用，不参与清理
+  disk_peak_gb: 60                  # 实算约 56.5 G：14 固定 + 当前方法 12 ckpt + 最终权重(32.5 G) + 4 个方法的 A(10 G)。
                                     # 出现在"段 A 第 5 步训第 5 个方法时"和"段 C 训 RMU_downproj 时"，两处相当。
-                                    # 40 是保守预算。注意最终权重：trainer 结束时会往 output_dir 根目录再存一份，别漏算
-  disk_stop_free_gb: 8              # 正常剩 15 G；掉到 8 G 说明有东西没按规矩删。不能设更小：训练中途爆盘会写出损坏 ckpt
+                                    # 60 是保守预算。注意最终权重：trainer 结束时会往 output_dir 根目录再存一份，别漏算
+  disk_stop_free_gb: 8              # 按 85 − du -s /workspace 估算剩余（run_pipeline.py:check_disk）。正常剩约 28 G；
+                                    # 掉到 8 G 说明有东西没按规矩删。不能设更小：训练中途爆盘会写出损坏 ckpt
   cleanup:
     rule: "该方法定完操作点 A 之后，立刻删掉它除 A 以外的全部 ckpt，再训下一个方法"
     keep_only: ["操作点 A"]
-    never_touch: ["saves/eval/"]      # 官方下载的评测日志也在数据盘上，是 Gate 1a 参照物和操作点阈值的来源，清理脚本必须硬编码跳过
+    never_touch: ["saves/eval/"]      # 官方下载的评测日志也在这里，是 Gate 1a 参照物和操作点阈值的来源；管道自己的
+                                      # 全部评测产物（opA_* / util_* / archiveA_* / gate1b_*）也写在这里。清理脚本必须硬编码跳过
     exception: "NPO 的最终权重留到 Gate 1b 做完再删（Gate 1b 比的就是最终权重，那是唯一的外部校验）"
     verify_before_delete: "keep 列表里的 ckpt 先 from_pretrained 加载成功才允许删。删除不可逆，
                            而 ckpt 可能写坏；留下坏文件要整跑重来，且新轨迹与旧轨迹不是同一条，前面的分析全废"
