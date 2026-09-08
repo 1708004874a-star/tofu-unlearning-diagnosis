@@ -6,15 +6,21 @@
   results/gate2_rmu_layer_sweep.json                     —— 第8步，RMU 16层单测（没有归一化字段，
                                                              这里用 transplant_RMU.json 的 denom 补算）
   results/transplant_{NPO,DPO,RMU}.json                  —— 第10步，top-1/layer7锚点/joint16
+  results/transplant_full_sweep_{NPO,DPO,RMU}.json       —— 第10步二级分析，16层全测移植
+                                                             （2026-09-06 新增，Bonferroni）
   results/archiveA/{NPO,RMU,DPO}.json                    —— 第6步，A点的 full eval 存档
 
 图②用 retain_Q_A_ROUGE 代 model_utility（2026-09-05 决定，constants-v4.yaml
 restoration.significance.metric_for_catastrophic_axis）——model_utility 没有 value_by_index，
 retain_Q_A_ROUGE 结构相同、已实测确认可代替，图上标注清楚这个替代关系。
 
-图④只用 forget 轴：necessity/sufficiency 这套对称定义本来就是在 forget 轴上建立的
-（transplant_damage_definition），且只有 top-1 层和 layer7 锚点两个点同时有第9步(recovery)
-和第10步(damage)的数据，6个点（3方法 × 2层）。
+图④只用 forget 轴，48个点（3方法 × 16层）：横轴necessity(recovery，第9步换回扫描)，
+纵轴sufficiency(damage，第10步二级分析·全16层移植扫描)，两边都是Bonferroni口径
+（CI=0.996875，n_tests=16，见 constants-v4.yaml restoration.significance 和
+transplant_full_sweep_significance）——统计上对称、可以画在同一张图上。
+**这跟 transplant.py 原来那次 top-1 确认性检验（95% CI、n=1）是两套不同的统计处理，
+互不覆盖：top-1 那次的结论原样保留在 results/transplant_{method}.json 里，不在这张图上
+重复画出来，避免把两种显著性标准混进同一张图**（2026-09-06 决定）。
 
 跑在本地 Mac 上：python3 scripts/lib/make_figures.py
 """
@@ -48,6 +54,7 @@ sweep = {
     "RMU": load("gate2_rmu_layer_sweep.json"),
 }
 transplant = {m: load(f"transplant_{m}.json") for m in METHODS}
+transplant_full = {m: load(f"transplant_full_sweep_{m}.json") for m in METHODS}
 archiveA = {m: json.load(open(RESULTS / "archiveA" / f"{m}.json")) for m in METHODS}
 
 # RMU 的 sweep 没有归一化字段（gate2.py 没算），用 transplant_RMU.json 里已经算过的同一个 denom 补
@@ -86,15 +93,15 @@ for m in METHODS:
     ax1.scatter([L for L, s in zip(layers, sigs) if not s], [r for r, s in zip(rec, sigs) if not s],
                 facecolors="white", edgecolors=COLOR[m], marker="o", s=45, zorder=3)
 ax1.axhline(0, color="gray", linewidth=0.7)
-ax1.set_ylabel("归一化恢复量 %（forget 轴，实心=显著）")
-ax1.set_title("图① 逐层恢复量（必要性）vs ‖Δθ_layer‖ —— NPO / RMU / DPO")
+ax1.set_ylabel("Normalized Recovery % (forget axis, filled = significant)")
+ax1.set_title("Figure 1: Per-Layer Recovery (Necessity) vs ‖Δθ_layer‖ — NPO / RMU / DPO")
 ax1.legend(loc="upper right")
 
 for m in METHODS:
     delta = [raw_delta(m, L) for L in layers]
     ax2.plot(layers, delta, "-o", color=COLOR[m], label=m, linewidth=1.5, markersize=4)
-ax2.set_xlabel("层号（0-15）")
-ax2.set_ylabel("‖Δθ_layer‖（L2 范数，权重空间）")
+ax2.set_xlabel("Layer index (0-15)")
+ax2.set_ylabel("‖Δθ_layer‖ (L2 norm, weight space)")
 ax2.set_xticks(layers)
 ax2.legend(loc="upper right")
 
@@ -116,11 +123,12 @@ for m in METHODS:
     ax.scatter([L for L, s in zip(layers, sigs) if not s], [r for r, s in zip(rec, sigs) if not s],
                facecolors="white", edgecolors=COLOR[m], marker="o", s=45, zorder=3)
 ax.axhline(0, color="gray", linewidth=0.7)
-ax.set_xlabel("层号（0-15）")
-ax.set_ylabel("归一化恢复量 %（retain 轴，实心=显著）")
+ax.set_xlabel("Layer index (0-15)")
+ax.set_ylabel("Normalized Recovery % (retain axis, filled = significant)")
 ax.set_xticks(layers)
-ax.set_title("图② 换回哪层能修回 utility 损伤\n"
-              "(retain_Q_A_ROUGE 代 model_utility——后者无 value_by_index，只画不判，见 constants-v4.yaml)",
+ax.set_title("Figure 2: Which Layer Restores the Utility Damage\n"
+              "(retain_Q_A_ROUGE as proxy for model_utility — the latter has no value_by_index, "
+              "descriptive only, see constants-v4.yaml)",
               fontsize=10)
 ax.legend(loc="upper right")
 fig.tight_layout()
@@ -131,7 +139,7 @@ plt.close(fig)
 # ---------------------------------------------------------------------------
 # 图③ 三个方法在操作点 A 的 ES / MinK++ 对比
 # ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(6, 4.5))
+fig, ax = plt.subplots(figsize=(7.5, 4.8))
 x = range(len(METHODS))
 w = 0.35
 es = [archiveA[m]["extraction_strength"]["agg_value"] for m in METHODS]
@@ -142,7 +150,8 @@ ax.set_xticks(list(x))
 ax.set_xticklabels(METHODS)
 ax.set_ylabel("agg_value")
 ax.set_ylim(0, 1.12)
-ax.set_title("图③ 操作点 A 的 ES / MinK++ 对比（遗忘不足轴，只画不判）")
+ax.set_title("Figure 3: ES / MinK++ Comparison at Operating Point A\n(insufficient-forgetting axis, descriptive only)",
+             fontsize=11)
 ax.legend()
 for i, (e, k) in enumerate(zip(es, mink)):
     ax.text(i - w / 2, e + 0.02, f"{e:.3f}", ha="center", fontsize=8)
@@ -153,45 +162,51 @@ plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
-# 图④ 必要性(recovery, forget轴) × 充分性(damage, forget轴) 散点
+# 图④ 必要性(recovery, forget轴) × 充分性(damage, forget轴) 散点 —— 48点二级分析
+# 2026-09-06 改版：从"top-1+layer7锚点"6个点扩到16层全测的48个点。两轴都是Bonferroni
+# 口径（CI=0.996875，n_tests=16），实心=充分性(y轴)过Bonferroni显著，空心=没过。
+# 原 transplant.py 的 top-1 确认性检验（95% CI，n=1）不在这张图上重复画出，见图注。
 # ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(6.5, 6))
+fig, ax = plt.subplots(figsize=(7.5, 6.5))
 for m in METHODS:
-    t = transplant[m]
-    top1_L = t["top1_layer"]
-    anchor_L = t["anchor_layer"]
-    points = [
-        (top1_L, "top1", "o",
-         norm_recovery(m, top1_L, "forget_axis"),
-         t["top1_result_confirmatory"]["forget_axis"]["normalized_damage"]),
-    ]
-    if anchor_L != top1_L:
-        points.append(
-            (anchor_L, "anchor", "^",
-             norm_recovery(m, anchor_L, "forget_axis"),
-             t["anchor_result_exploratory"]["forget_axis"]["normalized_damage"])
-        )
-    for L, role, marker, x_val, y_val in points:
-        ax.scatter(x_val * 100, y_val * 100, color=COLOR[m], marker=marker, s=110,
-                   edgecolors="black", linewidths=0.6, zorder=3)
-        ax.annotate(f"{m}-L{L}", (x_val * 100, y_val * 100),
-                    textcoords="offset points", xytext=(6, 4), fontsize=8)
+    layer_res = transplant_full[m]["layer_results"]
+    for L in range(N_LAYERS):
+        x_val = norm_recovery(m, L, "forget_axis") * 100
+        y_axis = layer_res[str(L)]["forget_axis"]
+        y_val = y_axis["normalized_damage"] * 100
+        is_sig = y_axis["significant"]
+        if is_sig:
+            ax.scatter(x_val, y_val, color=COLOR[m], marker="o", s=70,
+                       edgecolors="black", linewidths=0.6, zorder=3)
+        else:
+            ax.scatter(x_val, y_val, facecolors="white", edgecolors=COLOR[m], marker="o",
+                       s=70, linewidths=1.3, zorder=3)
 ax.axhline(0, color="gray", linewidth=0.7)
 ax.axvline(0, color="gray", linewidth=0.7)
-ax.set_xlabel("必要性：归一化恢复量 %（第9步，换回=减法，forget 轴）")
-ax.set_ylabel("充分性：归一化损伤 %（第10步，移植=加法，forget 轴）")
-ax.set_title("图④ 必要性 × 充分性散点\n○=各方法 top-1 层（forget 轴排名） △=layer 7 锚点（探索性）",
+ax.set_xlabel("Necessity: Normalized Recovery % (Step 9 restore sweep, forget axis, Bonferroni CI=0.996875)")
+ax.set_ylabel("Sufficiency: Normalized Damage %\n(Step 10 secondary full 16-layer transplant sweep, "
+              "forget axis, Bonferroni CI=0.996875)")
+ax.set_title("Figure 4: Necessity × Sufficiency Scatter (3 methods × 16 layers = 48 points)\n"
+             "Filled = sufficiency significant (Bonferroni)   Hollow = not significant",
              fontsize=10)
 from matplotlib.lines import Line2D
 legend_elems = [Line2D([0], [0], marker="o", color="w", markerfacecolor=c, markeredgecolor="black",
                        markersize=9, label=m) for m, c in COLOR.items()]
-legend_elems += [Line2D([0], [0], marker="o", color="w", markerfacecolor="gray", markeredgecolor="black",
-                        markersize=9, label="top-1"),
-                 Line2D([0], [0], marker="^", color="w", markerfacecolor="gray", markeredgecolor="black",
-                        markersize=9, label="layer7锚点")]
-ax.legend(handles=legend_elems, loc="best", fontsize=8)
-fig.tight_layout()
-fig.savefig(FIGDIR / "fig4_necessity_sufficiency.png", dpi=150)
+ax.legend(handles=legend_elems, loc="best", fontsize=9)
+fig.text(0.5, 0.085,
+          "Note: both axes here use the secondary-analysis convention (16 simultaneous tests, "
+          "Bonferroni, CI=0.996875).",
+          ha="center", fontsize=7.5, color="dimgray")
+fig.text(0.5, 0.05,
+          "The original transplant.py top-1 single-layer confirmatory test (95% CI, n=1, one layer "
+          "pre-selected by necessity ranking)",
+          ha="center", fontsize=7.5, color="dimgray")
+fig.text(0.5, 0.015,
+          "stands independently and is not overwritten or mixed into this plot — see "
+          "top1_result_confirmatory in transplant_{method}.json.",
+          ha="center", fontsize=7.5, color="dimgray")
+fig.tight_layout(rect=[0, 0.14, 1, 1])
+fig.savefig(FIGDIR / "fig4_necessity_sufficiency.png", dpi=150, bbox_inches="tight")
 plt.close(fig)
 
 print("四张图已生成：")
