@@ -286,6 +286,25 @@ restoration:
     norm 5.12%) 差距在 bootstrap 噪声量级内，报告里写'恢复量最高的层，与次高层无显著差异'，
     不写死是 layer 8。RMU 同样接近(layer1 raw 0.0782 vs layer2 raw 0.0715)，表述同样要谨慎。
     DPO 的 top-1(layer 15, norm 20.82%) 甩开次高(layer 7, norm 12.13%) 一大截，可以写强结论"
+  transplant_full_sweep_significance:  # 2026-09-06 新增：二级分析，跟 top-1 确认性检验并存不覆盖
+    what: "16层全部移植测一遍（不再只测 top-1+layer7 两个点），跟第9步换回扫描完全对称"
+    why: "起因：NPO 的 layer 7（必要性第2）充分性(norm 15.77%)比 top-1 layer 8（必要性第1）的
+          充分性(norm 8.22%)还高——必要性排名不能预测充分性排名，只抽查2层不够，得16层全测
+          才知道真正的充分性最大值落在哪层，图④也才能从2个点扩到16个点"
+    method: "同 restoration.significance——逐样本配对 bootstrap，CI 下界 > 0 才算显著"
+    bootstrap_n: 20000
+    alpha: 0.003125            # 0.05/16，Bonferroni，跟第9步同一套统计处理——16层同时检验，
+                               # 不再是 transplant_significance 那种"预先选定单一层"的场景
+    ci_effective: 0.996875     # 1 − 0.05/16，与 restoration.significance.ci_effective 一致
+    n_tests_per_method: 16
+    rmu_layers_8_15_not_skipped: true  # 2026-09-06 决定：RMU 的 8-15 层理论 Δθ=0、移植应为精确
+      # no-op，但仍然实测、不 assert 跳过——transplant 是新代码路径，实测才能验证层号有没有
+      # 搞错、有没有读到上一个变体的缓存结果，这正是 Gate 2 当初设计"8-15层 restoration 恢复量
+      # 严格为0"要抓的问题，同一类检查在新代码路径上要重新做一次。多8次评测（约10分钟），不省
+    coexistence_with_top1: "跟 transplant_significance 的 top-1 确认性检验两套并存，互不覆盖：
+      原 top-1 结果（results/transplant_{method}.json）保持 95% CI / n=1 原样不动，不重跑不改写；
+      本二级分析单独存 results/transplant_full_sweep_{method}.json。报告里两份数据必须各自标明
+      来路（confirmatory top-1 vs secondary full-sweep）和 CI 水平，不得混排成同一张判据表"
   full_eval_top_k: 3                # 段 E
 
 # ---------------------------------------------------------------------------

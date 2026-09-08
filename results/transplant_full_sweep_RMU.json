@@ -1,0 +1,419 @@
+{
+  "method": "RMU",
+  "analysis_level": "secondary\uff08\u4e8c\u7ea7\u5206\u6790\uff0cBonferroni\uff0c\u8ddf\u7b2c9\u6b65\u6362\u56de\u626b\u63cf\u540c\u4e00\u5957\u7edf\u8ba1\u5904\u7406\uff09",
+  "significance_note": "alpha=0.05/16=0.003125\uff0cCI=0.996875\uff0c16\u5c42\u540c\u65f6\u68c0\u9a8c\u2014\u2014\u4e0d\u540c\u4e8e transplant_{method}.json \u91cc top1_result_confirmatory \u7684 95% CI / n=1\uff08\u90a3\u662f\u9884\u5148\u6309\u5fc5\u8981\u6027\u6392\u540d\u9009\u5b9a\u5355\u4e00\u5c42\u7684\u786e\u8ba4\u6027\u68c0\u9a8c\uff0c\u672c\u6587\u4ef6\u4e0d\u8986\u76d6\u3001\u4e0d\u6539\u5199\u90a3\u4efd\u7ed3\u679c\uff09",
+  "layer_results": {
+    "0": {
+      "forget_axis": {
+        "mean_damage": 0.01390408428299898,
+        "ci_lower": -0.0034748446446906636,
+        "ci_upper": 0.03223031060564982,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.03282779822556237,
+        "normalized_ci_lower": -0.008204171992869776,
+        "normalized_ci_upper": 0.07609635498277229,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.00011566893321498018,
+        "ci_lower": -0.018263819004169988,
+        "ci_upper": 0.017988784550058208,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.0005168061739363457,
+        "normalized_ci_lower": -0.08160232967194507,
+        "normalized_ci_upper": 0.08037348195994964,
+        "denom": 0.223814921431699
+      }
+    },
+    "1": {
+      "forget_axis": {
+        "mean_damage": 0.0037266291071911773,
+        "ci_lower": -0.017532404122010167,
+        "ci_upper": 0.02485888958707726,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.008798639730770724,
+        "normalized_ci_lower": -0.04139432796952429,
+        "normalized_ci_upper": 0.05869229464280036,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.00831199014080855,
+        "ci_lower": -0.027431058035092735,
+        "ci_upper": 0.011576138650042913,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.03713778369931023,
+        "normalized_ci_lower": -0.12256134604262209,
+        "normalized_ci_upper": 0.051721925312185106,
+        "denom": 0.223814921431699
+      }
+    },
+    "2": {
+      "forget_axis": {
+        "mean_damage": 0.002470208861907717,
+        "ci_lower": -0.014139291599278918,
+        "ci_upper": 0.019827948106550287,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.005832208467900045,
+        "normalized_ci_lower": -0.03338312701693449,
+        "normalized_ci_upper": 0.04681414945568494,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.000611148326106152,
+        "ci_lower": -0.015511632580457407,
+        "ci_upper": 0.013742943312444206,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.0027305968797645803,
+        "normalized_ci_lower": -0.06930562306227224,
+        "normalized_ci_upper": 0.061403159470036064,
+        "denom": 0.223814921431699
+      }
+    },
+    "3": {
+      "forget_axis": {
+        "mean_damage": -0.0023020637995634996,
+        "ci_lower": -0.01943851535823612,
+        "ci_upper": 0.015825350664230117,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.005435214889113281,
+        "normalized_ci_lower": -0.04589469158820672,
+        "normalized_ci_upper": 0.037363943419800816,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.004887723138161357,
+        "ci_lower": -0.016249253391062684,
+        "ci_upper": 0.004044539213019969,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.02183823628422795,
+        "normalized_ci_lower": -0.07260129613843205,
+        "normalized_ci_upper": 0.018070909603112542,
+        "denom": 0.223814921431699
+      }
+    },
+    "4": {
+      "forget_axis": {
+        "mean_damage": -0.008344837826928268,
+        "ci_lower": -0.026933145146147034,
+        "ci_upper": 0.009537628321329832,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.019702315293240923,
+        "normalized_ci_lower": -0.06358965009429554,
+        "normalized_ci_upper": 0.022518515546245833,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.014968552950694396,
+        "ci_lower": -0.0325911386757324,
+        "ci_upper": 0.0009991494959984254,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.06687915557615004,
+        "normalized_ci_lower": -0.14561646947957466,
+        "normalized_ci_upper": 0.0044641773193988465,
+        "denom": 0.223814921431699
+      }
+    },
+    "5": {
+      "forget_axis": {
+        "mean_damage": 0.004818233581587671,
+        "ci_lower": -0.009650085542440496,
+        "ci_upper": 0.020014764444206922,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.011375937933100082,
+        "normalized_ci_lower": -0.02278402910963399,
+        "normalized_ci_upper": 0.04725522625822772,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.014503655865737694,
+        "ci_lower": -0.03430705222286689,
+        "ci_upper": 0.004026273951418758,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.06480200592954538,
+        "normalized_ci_lower": -0.15328313234618846,
+        "normalized_ci_upper": 0.01798930082794969,
+        "denom": 0.223814921431699
+      }
+    },
+    "6": {
+      "forget_axis": {
+        "mean_damage": -0.0010240475331662708,
+        "ci_lower": -0.017085009605164927,
+        "ci_upper": 0.014924073886348796,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.0024177950239608523,
+        "normalized_ci_lower": -0.04033802130255616,
+        "normalized_ci_upper": 0.035236012402736286,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": -0.011054679672454706,
+        "ci_lower": -0.03197699459753165,
+        "ci_upper": 0.009703069605121193,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": -0.04939205841031574,
+        "normalized_ci_lower": -0.14287248764729918,
+        "normalized_ci_upper": 0.043353095240713214,
+        "denom": 0.223814921431699
+      }
+    },
+    "7": {
+      "forget_axis": {
+        "mean_damage": 0.0016510529276202773,
+        "ci_lower": -0.012856460571480535,
+        "ci_upper": 0.016902344257900295,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.003898166270030116,
+        "normalized_ci_lower": -0.030354339411730696,
+        "normalized_ci_upper": 0.039906745064527474,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0017679932574786248,
+        "ci_lower": -0.0201875920399826,
+        "ci_upper": 0.02380109858144196,
+        "significant": false,
+        "exact_no_change": false,
+        "normalized_damage": 0.007899353832930922,
+        "normalized_ci_lower": -0.09019770402637428,
+        "normalized_ci_upper": 0.10634276941497521,
+        "denom": 0.223814921431699
+      }
+    },
+    "8": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "9": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "10": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "11": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "12": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "13": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "14": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    },
+    "15": {
+      "forget_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.42354605043758736
+      },
+      "retain_axis": {
+        "mean_damage": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0,
+        "significant": false,
+        "exact_no_change": true,
+        "normalized_damage": 0.0,
+        "normalized_ci_lower": 0.0,
+        "normalized_ci_upper": 0.0,
+        "denom": 0.223814921431699
+      }
+    }
+  },
+  "joint16_result_reused_from_transplant_py": {
+    "forget_axis": {
+      "mean_damage": 0.42352891248700153,
+      "ci_lower": 0.3965816121946536,
+      "ci_upper": 0.45062528889171294,
+      "significant": true,
+      "exact_no_change": false,
+      "normalized_damage": 0.9999595369840703,
+      "normalized_ci_lower": 0.9363364663297523,
+      "normalized_ci_upper": 1.0639345790762271,
+      "denom": 0.42354605043758736
+    },
+    "retain_axis": {
+      "mean_damage": 0.22866429349320547,
+      "ci_lower": 0.20012604418001365,
+      "ci_upper": 0.25727544257573043,
+      "significant": true,
+      "exact_no_change": false,
+      "normalized_damage": 1.0216668845423085,
+      "normalized_ci_lower": 0.8941586329447904,
+      "normalized_ci_upper": 1.149500850658174,
+      "denom": 0.223814921431699
+    }
+  },
+  "denom": {
+    "forget": 0.42354605043758736,
+    "retain": 0.223814921431699
+  }
+}
