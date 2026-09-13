@@ -134,3 +134,38 @@ compatibility in evaluation metrics"，2025-12-03 关闭未合并），diff 跟 
 23 项判据全部 PASS（0 BORDERLINE，0 FAIL），4 项 unrated 仅记录。
 
 **Gate 1a：通过。**
+
+
+## 第 8 步产物的归一化口径依赖第 10 步产物（2026-09-13 发现，已修源码，待重跑生效）
+
+**现象**：`results/gate2_rmu_layer_sweep.json` 只存原始 `mean_recovery`，没有 `normalized_recovery`
+也没有 `denom`。`scripts/lib/make_figures.py` 因此要借 `results/transplant_{RMU}.json` 的 denom
+才能画出 fig1/fig2 里的 RMU 曲线（旧版 `make_figures.py:79-81` 那两行）。
+
+**不是复现性破损**：`transplant_RMU.json` 和 `make_figures.py` 都在 repo 里，第三方 clone 之后
+跑 `make_figures.py` 能复现 RMU 曲线。真正的问题是**跨步骤的隐式依赖**——第 8 步（Gate 2）的
+产物必须借第 10 步（移植）的产物才能解释，而第 10 步在流程上晚于第 8 步。可追溯性缺陷，不是
+数值错误。
+
+**已做**：`gate2.py` 就地计算并落盘 `denom` + 逐层 `normalized_recovery`，同时把输出 schema
+从扁平的 `{"0"…"15"}` 改成与 `layer_sweep_{NPO,DPO}.json` 对齐的
+`{"method", "layer_results", "denom"}`。`make_figures.py` 两种 schema 都兼容。
+
+**未做**：盘上那份 JSON 仍是旧格式——补写字段需要重跑 Gate 2（要 GPU），本次未重跑。
+**下次开机跑 Gate 2 时自动修复。** 在那之前，旧产物 + 旧口径依然成立，只是依赖关系隐式。
+
+**刻意没写的字段**：`sum_of_singles` / `joint_restore_exploratory`。RMU 的联合换回**从未跑过**
+（`gate2.py` 里没有这一步），只写单层和会诱导"单层和 ÷ 联合"这种跨尺度误读——这个错误在
+2026-09-13 的核查里真实发生过一次。RMU 的 necessity 可加性要补，得单跑一次 joint restore。
+
+## 图上 hollow/filled 的语义与原设计不一致（2026-09-13 记录）
+
+`执行清单_v4.md:109` 原文：「不可行的方法退出跨方法比较，但仍在图上用**空心点**画出——它正是
+"失败"的一个干净定义」。原设计里空心编码的是 **feasibility**。
+
+但 fig1/fig2/fig4 实际用空心编码的是**显著性**（Bonferroni 下 CI 下界是否过 0），
+filled = significant。两个语义抢同一个视觉通道。
+
+**2026-09-13 决定**：形状编码 feasibility（圆 = feasible，方 = infeasible），
+填充继续编码显著性，两维分离。`执行清单_v4.md:109` 那条原设计**记为已偏离**——
+不是被满足了换个形式，是换了编码通道。

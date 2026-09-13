@@ -108,6 +108,19 @@ def main():
     rmu_forget_rouge = by_index(rmu_baseline, "forget_Q_A_ROUGE")
     rmu_retain_rouge = by_index(rmu_baseline, "retain_Q_A_ROUGE")
 
+    # 2026-09-13：本步产物原先只存原始 mean_recovery，归一化口径要靠第10步的
+    # transplant_RMU.json 才能补出来（make_figures.py:79-81 就是这么借的）——
+    # 第8步的产物依赖第10步的产物才能解释，是可追溯性缺陷。这里就地算好存下。
+    # 公式与 transplant.compute_denom / layer_sweep.load_baselines 完全一致。
+    target_baseline = json.load(open("saves/eval/target_cheap_baseline/TOFU_EVAL.json"))
+    denom = {
+        "forget": (target_baseline["forget_Q_A_ROUGE"]["agg_value"]
+                   - rmu_baseline["forget_Q_A_ROUGE"]["agg_value"]),
+        "retain": (target_baseline["retain_Q_A_ROUGE"]["agg_value"]
+                   - rmu_baseline["retain_Q_A_ROUGE"]["agg_value"]),
+    }
+    print(f"denom_forget={denom['forget']:.6f}  denom_retain={denom['retain']:.6f}")
+
     # 判据 1：8-15 层 Δθ 严格为 0（逐元素，不用评测）
     print("=== 判据1：8-15层 Δθ 严格为0（逐元素比对，不评测）===")
     crit1_ok = True
@@ -142,6 +155,8 @@ def main():
         result = restore_one_layer(target_sd, rmu_sd, L, task_name)
         forget_axis = bootstrap_axis(result, rmu_forget_rouge, "forget_Q_A_ROUGE")
         retain_axis = bootstrap_axis(result, rmu_retain_rouge, "retain_Q_A_ROUGE")
+        forget_axis["normalized_recovery"] = forget_axis["mean_recovery"] / denom["forget"]
+        retain_axis["normalized_recovery"] = retain_axis["mean_recovery"] / denom["retain"]
         layer_results[L] = {
             "forget_axis": forget_axis,
             "retain_axis": retain_axis,
@@ -156,7 +171,12 @@ def main():
 
     out_path = Path("../results/gate2_rmu_layer_sweep.json")
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(layer_results, open(out_path, "w"), indent=2)
+    # schema 与 results/layer_sweep_{NPO,DPO}.json 对齐（原先是扁平的 "0".."15"，
+    # 跟另一份 sweep 产物两种形状，下游要写两套读法）。
+    # 注意：不写 sum_of_singles / joint_restore_exploratory——RMU 的联合换回从未跑过，
+    # 只写单层和会诱导"单层和 ÷ 联合"这种跨尺度误读。
+    json.dump({"method": "RMU", "layer_results": layer_results, "denom": denom},
+              open(out_path, "w"), indent=2)
     print(f"\n落盘：{out_path}")
 
     # 判据2：8-15层 restoration 恢复量严格为0（换回等于没换）—— 判据本身只看 forget 轴

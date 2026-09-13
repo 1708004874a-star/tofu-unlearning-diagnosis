@@ -48,18 +48,64 @@ def load(name):
     return json.load(open(RESULTS / name))
 
 
+# gate2 产物有两种 schema：2026-09-13 之前是扁平的 {"0":…,"15":…}，之后与
+# layer_sweep_{m}.json 对齐成 {"layer_results":…, "denom":…}。两种都读得动，
+# 这样盘上的旧产物和下次重跑的新产物都能出图。
+_g2 = load("gate2_rmu_layer_sweep.json")
+_g2_nested = "layer_results" in _g2
+
 sweep = {
     "NPO": load("layer_sweep_NPO.json")["layer_results"],
     "DPO": load("layer_sweep_DPO.json")["layer_results"],
-    "RMU": load("gate2_rmu_layer_sweep.json"),
+    "RMU": _g2["layer_results"] if _g2_nested else _g2,
 }
 transplant = {m: load(f"transplant_{m}.json") for m in METHODS}
 transplant_full = {m: load(f"transplant_full_sweep_{m}.json") for m in METHODS}
 archiveA = {m: json.load(open(RESULTS / "archiveA" / f"{m}.json")) for m in METHODS}
 
-# RMU 的 sweep 没有归一化字段（gate2.py 没算），用 transplant_RMU.json 里已经算过的同一个 denom 补
-RMU_DENOM_FORGET = transplant["RMU"]["denom"]["forget"]
-RMU_DENOM_RETAIN = transplant["RMU"]["denom"]["retain"]
+# constants-v4.yaml:141 overshoot_must_appear_on_figures: true
+# ——「跨方法比恢复量的前提是 overshoot 相当」，所以每张恢复量图都必须把它标出来。
+# 实测值来自 run_pipeline 的产物，不重算。
+OVERSHOOT = {m: json.load(open(RESULTS / "pipeline"
+                / f"tofu_Llama-3.2-1B-Instruct_forget10_{m}.json"))["overshoot"]
+             for m in METHODS}
+OVERSHOOT_FLAG = 0.10          # constants-v4.yaml:140，只标记不重跑
+
+
+def m_label(m):
+    """图例标签带 overshoot；超过 flag 的打 † 。"""
+    ov = OVERSHOOT[m]
+    return f"{m}  (overshoot {ov:.3f}{' †' if ov > OVERSHOOT_FLAG else ''})"
+
+
+# 执行清单_v4.md:109「不可行的方法…仍在图上用空心点画出」——原设计用空心编码 feasibility，
+# 但填充已被显著性占用。2026-09-13 决定：形状编码 feasibility，填充继续编码显著性，两维分离。
+FEASIBLE = {m: json.load(open(RESULTS / "pipeline"
+               / f"tofu_Llama-3.2-1B-Instruct_forget10_{m}.json"))["feasible"]
+            for m in METHODS}
+MARKER = {m: ("o" if FEASIBLE[m] else "s") for m in METHODS}
+
+
+def panel_title(m):
+    ov = OVERSHOOT[m]
+    return (f"{m}    overshoot {ov:.3f}{' †' if ov > OVERSHOOT_FLAG else ''}"
+            f"    {'feasible' if FEASIBLE[m] else 'infeasible'}")
+
+
+# 2026-09-13：这段限定条件原先烤在 PNG 里，投影上约 4pt 读不到，而它承载的是全图
+# 最重要的限定。改为只留在幻灯片正文 + speaker notes，图内不再重复。文本保留在此
+# 供 deck 引用，不再 fig.text 上图。
+FIG_NOTE = ("Each panel has its own y-axis: shapes are comparable across panels, heights are not. "
+            "Filled = significant (Bonferroni). Circle = feasible, square = infeasible. "
+            "† overshoot > %.2f (constants-v4.yaml:140). Single operating point per method — "
+            "shape-invariance across doses is untested, so all layer-level claims are within-method."
+            % OVERSHOOT_FLAG)
+
+# 旧版 gate2 产物没有 denom，只能借 transplant_RMU.json 的（跨步骤依赖，已记入
+# limitations.md）；新版自带 denom，优先用自己的。
+_rmu_denom = _g2["denom"] if _g2_nested else transplant["RMU"]["denom"]
+RMU_DENOM_FORGET = _rmu_denom["forget"]
+RMU_DENOM_RETAIN = _rmu_denom["retain"]
 
 
 def norm_recovery(method, layer, axis):
@@ -80,30 +126,39 @@ def sig(method, layer, axis):
 
 
 # ---------------------------------------------------------------------------
-# 图① 逐层恢复量(forget轴) vs ||Δθ_layer||，三个方法叠在一起
+# 图① small multiples（2026-09-13 改版）。原版三方法叠在一个坐标系上，但三者的
+# denom（0.5320 / 0.7653 / 0.4235）和 overshoot（0.109 / 0.000 / 0.342）都不同，
+# 叠图会诱导"谁恢复得更多"这类不合法的跨方法比较——RMU 视觉最高很大程度只是分母最小。
+# 分面后：层间形状比较（合法）保留，高度比较（不合法）视觉上做不到。
 # ---------------------------------------------------------------------------
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
+fig, axes = plt.subplots(2, 3, figsize=(13, 6.4), sharex=True)
 layers = list(range(N_LAYERS))
-for m in METHODS:
+for c, m in enumerate(METHODS):
+    ax = axes[0][c]
     rec = [norm_recovery(m, L, "forget_axis") * 100 for L in layers]
     sigs = [sig(m, L, "forget_axis") for L in layers]
-    ax1.plot(layers, rec, "-", color=COLOR[m], label=m, linewidth=1.5, zorder=2)
-    ax1.scatter([L for L, s in zip(layers, sigs) if s], [r for r, s in zip(rec, sigs) if s],
-                color=COLOR[m], marker="o", s=45, zorder=3)
-    ax1.scatter([L for L, s in zip(layers, sigs) if not s], [r for r, s in zip(rec, sigs) if not s],
-                facecolors="white", edgecolors=COLOR[m], marker="o", s=45, zorder=3)
-ax1.axhline(0, color="gray", linewidth=0.7)
-ax1.set_ylabel("Normalized Recovery % (forget axis, filled = significant)")
-ax1.set_title("Figure 1: Per-Layer Recovery (Necessity) vs ‖Δθ_layer‖ — NPO / RMU / DPO")
-ax1.legend(loc="upper right")
+    ax.plot(layers, rec, "-", color=COLOR[m], linewidth=1.4, zorder=2)
+    ax.scatter([L for L, v in zip(layers, sigs) if v], [r for r, v in zip(rec, sigs) if v],
+               color=COLOR[m], marker=MARKER[m], s=46, zorder=3)
+    ax.scatter([L for L, v in zip(layers, sigs) if not v], [r for r, v in zip(rec, sigs) if not v],
+               facecolors="white", edgecolors=COLOR[m], marker=MARKER[m], s=46,
+               linewidths=1.2, zorder=3)
+    ax.axhline(0, color="gray", linewidth=0.7)
+    ax.set_title(panel_title(m), fontsize=10.5)
+    ax.tick_params(labelsize=9)
+    if c == 0:
+        ax.set_ylabel("Normalized recovery %\n(forget axis)", fontsize=10)
 
-for m in METHODS:
+for c, m in enumerate(METHODS):
+    ax = axes[1][c]
     delta = [raw_delta(m, L) for L in layers]
-    ax2.plot(layers, delta, "-o", color=COLOR[m], label=m, linewidth=1.5, markersize=4)
-ax2.set_xlabel("Layer index (0-15)")
-ax2.set_ylabel("‖Δθ_layer‖ (L2 norm, weight space)")
-ax2.set_xticks(layers)
-ax2.legend(loc="upper right")
+    ax.plot(layers, delta, "-", color=COLOR[m], linewidth=1.4)
+    ax.scatter(layers, delta, color=COLOR[m], marker=MARKER[m], s=20)
+    ax.set_xticks(layers[::3])
+    ax.tick_params(labelsize=9)
+    ax.set_xlabel("Layer index", fontsize=10)
+    if c == 0:
+        ax.set_ylabel("‖Δθ_layer‖\n(L2, weight space)", fontsize=10)
 
 fig.tight_layout()
 fig.savefig(FIGDIR / "fig1_recovery_vs_delta.png", dpi=150)
@@ -111,26 +166,29 @@ plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
-# 图② 换回哪层能修回"utility 损伤"（retain_Q_A_ROUGE 代 model_utility，2026-09-05 决定）
+# 图② 同样改成 small multiples（retain 轴）。retain_Q_A_ROUGE 代 model_utility 的
+# 理由见 constants-v4.yaml restoration.significance.metric_for_catastrophic_axis，
+# 不再印在图上——那是内部备注，不该占投影面积。
 # ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(9, 4.5))
-for m in METHODS:
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.6), sharex=True)
+for c, m in enumerate(METHODS):
+    ax = axes[c]
     rec = [norm_recovery(m, L, "retain_axis") * 100 for L in layers]
     sigs = [sig(m, L, "retain_axis") for L in layers]
-    ax.plot(layers, rec, "-", color=COLOR[m], label=m, linewidth=1.5, zorder=2)
-    ax.scatter([L for L, s in zip(layers, sigs) if s], [r for r, s in zip(rec, sigs) if s],
-               color=COLOR[m], marker="o", s=45, zorder=3)
-    ax.scatter([L for L, s in zip(layers, sigs) if not s], [r for r, s in zip(rec, sigs) if not s],
-               facecolors="white", edgecolors=COLOR[m], marker="o", s=45, zorder=3)
-ax.axhline(0, color="gray", linewidth=0.7)
-ax.set_xlabel("Layer index (0-15)")
-ax.set_ylabel("Normalized Recovery % (retain axis, filled = significant)")
-ax.set_xticks(layers)
-ax.set_title("Figure 2: Which Layer Restores the Utility Damage\n"
-              "(retain_Q_A_ROUGE as proxy for model_utility — the latter has no value_by_index, "
-              "descriptive only, see constants-v4.yaml)",
-              fontsize=10)
-ax.legend(loc="upper right")
+    ax.plot(layers, rec, "-", color=COLOR[m], linewidth=1.4, zorder=2)
+    ax.scatter([L for L, v in zip(layers, sigs) if v], [r for r, v in zip(rec, sigs) if v],
+               color=COLOR[m], marker=MARKER[m], s=46, zorder=3)
+    ax.scatter([L for L, v in zip(layers, sigs) if not v], [r for r, v in zip(rec, sigs) if not v],
+               facecolors="white", edgecolors=COLOR[m], marker=MARKER[m], s=46,
+               linewidths=1.2, zorder=3)
+    ax.axhline(0, color="gray", linewidth=0.7)
+    ax.set_title(panel_title(m), fontsize=10.5)
+    ax.set_xticks(layers[::3])
+    ax.tick_params(labelsize=9)
+    ax.set_xlabel("Layer index", fontsize=10)
+    if c == 0:
+        ax.set_ylabel("Normalized recovery %\n(retain axis)", fontsize=10)
+
 fig.tight_layout()
 fig.savefig(FIGDIR / "fig2_retain_recovery.png", dpi=150)
 plt.close(fig)
@@ -167,48 +225,109 @@ plt.close(fig)
 # 口径（CI=0.996875，n_tests=16），实心=充分性(y轴)过Bonferroni显著，空心=没过。
 # 原 transplant.py 的 top-1 确认性检验（95% CI，n=1）不在这张图上重复画出，见图注。
 # ---------------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(7.5, 6.5))
-for m in METHODS:
-    layer_res = transplant_full[m]["layer_results"]
-    for L in range(N_LAYERS):
-        x_val = norm_recovery(m, L, "forget_axis") * 100
-        y_axis = layer_res[str(L)]["forget_axis"]
-        y_val = y_axis["normalized_damage"] * 100
-        is_sig = y_axis["significant"]
-        if is_sig:
-            ax.scatter(x_val, y_val, color=COLOR[m], marker="o", s=70,
-                       edgecolors="black", linewidths=0.6, zorder=3)
-        else:
-            ax.scatter(x_val, y_val, facecolors="white", edgecolors=COLOR[m], marker="o",
-                       s=70, linewidths=1.3, zorder=3)
-ax.axhline(0, color="gray", linewidth=0.7)
-ax.axvline(0, color="gray", linewidth=0.7)
-ax.set_xlabel("Necessity: Normalized Recovery % (Step 9 restore sweep, forget axis, Bonferroni CI=0.996875)")
-ax.set_ylabel("Sufficiency: Normalized Damage %\n(Step 10 secondary full 16-layer transplant sweep, "
-              "forget axis, Bonferroni CI=0.996875)")
-ax.set_title("Figure 4: Necessity × Sufficiency Scatter (3 methods × 16 layers = 48 points)\n"
-             "Filled = sufficiency significant (Bonferroni)   Hollow = not significant",
-             fontsize=10)
 from matplotlib.lines import Line2D
-legend_elems = [Line2D([0], [0], marker="o", color="w", markerfacecolor=c, markeredgecolor="black",
-                       markersize=9, label=m) for m, c in COLOR.items()]
-ax.legend(handles=legend_elems, loc="best", fontsize=9)
-fig.text(0.5, 0.085,
-          "Note: both axes here use the secondary-analysis convention (16 simultaneous tests, "
-          "Bonferroni, CI=0.996875).",
-          ha="center", fontsize=7.5, color="dimgray")
-fig.text(0.5, 0.05,
-          "The original transplant.py top-1 single-layer confirmatory test (95% CI, n=1, one layer "
-          "pre-selected by necessity ranking)",
-          ha="center", fontsize=7.5, color="dimgray")
-fig.text(0.5, 0.015,
-          "stands independently and is not overwritten or mixed into this plot — see "
-          "top1_result_confirmatory in transplant_{method}.json.",
-          ha="center", fontsize=7.5, color="dimgray")
-fig.tight_layout(rect=[0, 0.14, 1, 1])
-fig.savefig(FIGDIR / "fig4_necessity_sufficiency.png", dpi=150, bbox_inches="tight")
-plt.close(fig)
+from matplotlib.patches import Circle
 
-print("四张图已生成：")
-for f in sorted(FIGDIR.glob("*.png")):
-    print(" ", f)
+DECKDIR = FIGDIR / "deck"
+DECKDIR.mkdir(exist_ok=True)
+
+
+def draw_fig4(with_provenance_note: bool):
+    """图④。with_provenance_note=True 出分析版（图内带三行来路说明，进 results/figures/）；
+    False 出投影派生版（去掉那三行，进 results/figures/deck/）。
+
+    2026-09-13：投影版原先是 PIL 一次性裁剪出来的，不是任何脚本的产物，README 里
+    「four output figures」跟实际对不上。改成这里一个有名字的派生步骤——同一份数据、
+    同一段绘图代码，只是省掉在投影尺寸下约 4pt、根本读不到的那三行说明。
+    """
+    fig, ax = plt.subplots(figsize=(7.5, 6.5 if with_provenance_note else 5.9))
+    for m in METHODS:
+        layer_res = transplant_full[m]["layer_results"]
+        for L in range(N_LAYERS):
+            x_val = norm_recovery(m, L, "forget_axis") * 100
+            y_axis = layer_res[str(L)]["forget_axis"]
+            y_val = y_axis["normalized_damage"] * 100
+            if y_axis["significant"]:
+                ax.scatter(x_val, y_val, color=COLOR[m], marker=MARKER[m], s=70,
+                           edgecolors="black", linewidths=0.6, zorder=3)
+            else:
+                ax.scatter(x_val, y_val, facecolors="white", edgecolors=COLOR[m],
+                           marker=MARKER[m], s=70, linewidths=1.3, zorder=3)
+    ax.axhline(0, color="gray", linewidth=0.7)
+    ax.axvline(0, color="gray", linewidth=0.7)
+    # 正文说 "the points would lie on a rising diagonal"，那条线得真的画出来，
+    # 否则读者无从判断偏离多远。
+    lim = max(
+        max(norm_recovery(m, L, "forget_axis") * 100 for m in METHODS for L in range(N_LAYERS)),
+        max(transplant_full[m]["layer_results"][str(L)]["forget_axis"]["normalized_damage"] * 100
+            for m in METHODS for L in range(N_LAYERS)))
+    ax.plot([0, lim], [0, lim], ls=":", c="gray", linewidth=1.1, zorder=1)
+
+    # 2026-09-13：RMU 的 layers_must_be_zero（constants-v4.yaml:175）在必要性和充分性
+    # 两轴上都精确为 0，8 个点完全重合在原点。不标出来，读者会把它们数成一个点，而
+    # 标题里的 "48 points" 有 8 个是构造出来的零、不是测出来的零——这两种零不该混读。
+    struct_zero = [L for L in range(N_LAYERS)
+                   if norm_recovery("RMU", L, "forget_axis") == 0.0
+                   and transplant_full["RMU"]["layer_results"][str(L)]["forget_axis"][
+                       "normalized_damage"] == 0.0]
+    if struct_zero:
+        contiguous = struct_zero == list(range(struct_zero[0], struct_zero[-1] + 1))
+        span = (f"L{struct_zero[0]}\u2013{struct_zero[-1]}" if contiguous
+                else "L" + ",".join(str(L) for L in struct_zero))
+        ax.annotate(
+            f"RMU {span}: {len(struct_zero)} coincident points at the origin\n"
+            "\u0394\u03b8 = 0 by construction, not by measurement",
+            xy=(0.45, 0.45), xytext=(0.40 * lim, 0.30 * lim),
+            fontsize=8, color="dimgray", ha="left", va="center",
+            arrowprops=dict(arrowstyle="->", color="darkgray", linewidth=0.8,
+                            shrinkA=2, shrinkB=2),
+            zorder=2)
+        # 原点那一簇本来就挤（17 个点落在 ±1.5 之内），圈出来才知道箭头指的是哪一堆
+        ax.add_patch(Circle((0, 0), 0.9, fill=False, ec="darkgray",
+                            ls=(0, (2, 2)), linewidth=0.8, zorder=2))
+
+    ax.set_xlabel("Necessity: normalized recovery % (step 9 restore sweep, forget axis)", fontsize=11)
+    ax.set_ylabel("Sufficiency: normalized damage %\n(step 10 full 16-layer transplant sweep, forget axis)",
+                  fontsize=11)
+    ax.tick_params(labelsize=9)
+    if with_provenance_note:
+        ax.set_title("Figure 4: Necessity × Sufficiency (3 methods × 16 layers = 48 points)\n"
+                     "Filled = sufficiency significant (Bonferroni)   Hollow = not significant",
+                     fontsize=10)
+
+    elems = [Line2D([0], [0], marker=MARKER[m], color="w", markerfacecolor=c,
+                    markeredgecolor="black", markersize=9,
+                    label=f"{m} ({'feasible' if FEASIBLE[m] else 'infeasible'})")
+             for m, c in COLOR.items()]
+    elems.append(Line2D([0], [0], ls=":", color="gray", label="y = x"))
+    ax.legend(handles=elems, loc="best", fontsize=9)
+
+    if with_provenance_note:
+        for y, txt in [
+            (0.085, "Note: both axes use the secondary-analysis convention (16 simultaneous tests, "
+                    "Bonferroni, CI=0.996875)."),
+            (0.050, "The original top-1 single-layer confirmatory test (95% CI, n=1, one layer "
+                    "pre-selected by necessity ranking)"),
+            (0.015, "stands independently and is not mixed into this plot — see "
+                    "top1_result_confirmatory in transplant_{method}.json."),
+        ]:
+            fig.text(0.5, y, txt, ha="center", fontsize=7.5, color="dimgray")
+        fig.tight_layout(rect=[0, 0.14, 1, 1])
+        out = FIGDIR / "fig4_necessity_sufficiency.png"
+    else:
+        fig.tight_layout()
+        out = DECKDIR / "fig4_necessity_sufficiency.png"
+    fig.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return out
+
+
+_deck_fig4 = draw_fig4(with_provenance_note=True)     # 分析产物
+_deck_fig4 = draw_fig4(with_provenance_note=False)   # 投影派生版
+# 原先这里 glob 整个 FIGDIR，把 fig5（make_fig5_norm_confound.py 的产物）也报成本脚本写的。
+# 只列自己真正写出来的，才对得上 README 里"renders figures 1-4"那句话。
+print("已生成：")
+for name in ["fig1_recovery_vs_delta.png", "fig2_retain_recovery.png",
+             "fig3_es_mink.png", "fig4_necessity_sufficiency.png"]:
+    print(" ", FIGDIR / name)
+print("  ", _deck_fig4, "(figure 4, projection variant)")

@@ -16,6 +16,38 @@ Every recovery or damage number is tested with paired bootstrap resampling over 
 
 Segment A is complete for NPO, RMU, and DPO-idk, and is a self-contained pilot. It covers environment and fidelity gates, operating-point selection for each method, restore/transplant correctness checks, the RMU positive control, the 16-layer necessity and sufficiency sweeps, and the four summary figures. Five methods (NPO, RMU, DPO-idk, GA, GD) were trained; GA and GD are analyzed further in segment B. Segments B through F (cross-family sweeps, a second positive control restricted to RMU's down-projection matrices, Fisher information overlap, within-layer localization, and a relearning-speed probe) are optional extensions and have not been started.
 
+## Key results
+
+Segment A covers NPO, RMU and DPO-idk, each at its own operating point. Every number below is a mean over 400 paired per-sample differences and is tested by bootstrap; a full 16-layer sweep is Bonferroni-corrected, a single pre-registered layer is not.
+
+### How far do single layers add up to the joint effect?
+
+Each ratio is the sum of the 16 single-layer effects divided by the effect of operating on all 16 layers at once. On the necessity side it is the fraction of the joint restore that the single restores recover; on the sufficiency side, the fraction of the joint transplant that the single transplants reproduce.
+
+| | necessity (restore) | sufficiency (transplant) |
+|---|---|---|
+| NPO | 0.37 | 0.94 |
+| DPO-idk | 0.83 | 0.07 |
+| RMU | ≥ 0.81 (estimated) | 0.04 |
+
+NPO is the only method whose necessity ratio falls below its sufficiency ratio; DPO-idk and RMU are the other way round. These ratios say how far the measured single-layer effects add up. They are not evidence for any particular encoding structure: the two columns map onto structure in opposite directions, so no single label fits both, and none is claimed here.
+
+RMU's necessity figure is a lower bound rather than a point estimate, because its joint restore was never run. Evidence in the same direction suggests the bound is tight: transplanting all 16 transformer blocks — without `embed_tokens` — already reproduces 99.996% of RMU's forgetting effect, the closest to complete of the three methods. That does not settle the restore direction, which is the distinction this whole analysis is about, so the bound is left as a bound.
+
+### Does the damage separate forgetting from general ability?
+
+The selectivity index is the forget-axis denominator divided by the retain-axis denominator, both taken at a method's own operating point.
+
+| | selectivity index | forget denom | retain denom |
+|---|---|---|---|
+| NPO | 1.012 | 0.5320 | 0.5255 |
+| DPO-idk | 1.086 | 0.7653 | 0.7044 |
+| RMU | 1.892 | 0.4235 | 0.2238 |
+
+Only RMU moves the two axes by appreciably different amounts, and RMU is also the only one of the three that clears the feasibility floor. The index is not dose-controlled — the methods overshoot their operating points by very different margins — so it is an auditable observation, not a calibrated measurement.
+
+Both denominators are read from `denom.forget` and `denom.retain` in `results/transplant_full_sweep_{method}.json`; the single-layer and joint effects behind the ratios above come from `layer_sweep_{NPO,DPO}.json`, `gate2_rmu_layer_sweep.json` and the same `transplant_full_sweep_*` files.
+
 ## Repository layout
 
 Tracked in git:
@@ -32,14 +64,14 @@ scripts/
     layer_sweep.py               16-layer necessity sweep (step 9)
     transplant.py                 top-1 sufficiency test, anchor layer, joint-16 control (step 10, phase 1)
     transplant_full_sweep.py     16-layer sufficiency sweep (step 10, phase 2)
-    make_figures.py              renders the four summary figures
+    make_figures.py              renders figures 1-4, plus the projection variant of figure 4
   patches/                      two bf16 fixes applied on top of open-unlearning's evaluation code
 results/
   layer_sweep_{NPO,DPO}.json, gate2_rmu_layer_sweep.json    necessity sweep results
   transplant_{NPO,DPO,RMU}.json                              sufficiency, phase 1 (confirmatory)
   transplant_full_sweep_{NPO,DPO,RMU}.json                   sufficiency, phase 2 (secondary sweep)
   archiveA/                      full evaluation at each method's operating point
-  figures/                       the four output figures
+  figures/                       the summary figures; deck/ holds the projection variant of figure 4
   limitations.md                 deviations from plan and why, including the full Gate 1a comparison
   env/                           environment snapshot (pip freeze, GPU, library versions)
 ```
