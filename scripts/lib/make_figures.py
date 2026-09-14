@@ -131,7 +131,14 @@ def sig(method, layer, axis):
 # 叠图会诱导"谁恢复得更多"这类不合法的跨方法比较——RMU 视觉最高很大程度只是分母最小。
 # 分面后：层间形状比较（合法）保留，高度比较（不合法）视觉上做不到。
 # ---------------------------------------------------------------------------
-fig, axes = plt.subplots(2, 3, figsize=(13, 6.4), sharex=True)
+# 2026-09-14：下半栏改回单面板。上半栏（归一化 recovery）分母各不相同、不可跨方法比，
+# 所以必须分面；‖Δθ‖ 是权重空间 L2，三方法本来就在同一把尺子上——它是全图唯一一处
+# 合法的跨方法量级比较，也正是"改得最多的层"这个对照的全部作用。分面给它三条独立 y 轴，
+# 会把 DPO 真实 0.034 的起伏和 RMU 真实 0.612 的尖峰渲染成同样高度，对照就不对照任何东西了。
+fig = plt.figure(figsize=(13, 6.4))
+_gs = fig.add_gridspec(2, 3, height_ratios=[1.0, 0.82], hspace=0.42, wspace=0.26)
+axes = [[fig.add_subplot(_gs[0, c]) for c in range(3)]]
+ax_delta = fig.add_subplot(_gs[1, :])
 layers = list(range(N_LAYERS))
 for c, m in enumerate(METHODS):
     ax = axes[0][c]
@@ -144,24 +151,33 @@ for c, m in enumerate(METHODS):
                facecolors="white", edgecolors=COLOR[m], marker=MARKER[m], s=46,
                linewidths=1.2, zorder=3)
     ax.axhline(0, color="gray", linewidth=0.7)
-    ax.set_title(panel_title(m), fontsize=10.5)
+    ax.set_title(panel_title(m), fontsize=12)
+    # 上下排拆成两个 gridspec 之后 sharex 没了，上排会自动取 2.5 步长——层索引没有 2.5 层。
+    # 用 layers[::3] 而不是 MaxNLocator(integer=True)，是为了跟附录 A4 那三格的刻度逐字一致。
+    ax.set_xticks(layers[::3])
     ax.tick_params(labelsize=9)
     if c == 0:
         ax.set_ylabel("Normalized recovery %\n(forget axis)", fontsize=10)
 
-for c, m in enumerate(METHODS):
-    ax = axes[1][c]
+for m in METHODS:
     delta = [raw_delta(m, L) for L in layers]
-    ax.plot(layers, delta, "-", color=COLOR[m], linewidth=1.4)
-    ax.scatter(layers, delta, color=COLOR[m], marker=MARKER[m], s=20)
-    ax.set_xticks(layers[::3])
-    ax.tick_params(labelsize=9)
-    ax.set_xlabel("Layer index", fontsize=10)
-    if c == 0:
-        ax.set_ylabel("‖Δθ_layer‖\n(L2, weight space)", fontsize=10)
+    ax_delta.plot(layers, delta, "-", color=COLOR[m], linewidth=1.5,
+                  marker=MARKER[m], markersize=4.5, label=m)
+    # 每个方法自己的峰在哪一层，共享轴下 DPO 那条几乎贴平，标出来才读得到
+    pk = max(layers, key=lambda L: delta[L])
+    ax_delta.annotate(f"L{pk}", xy=(pk, delta[pk]), xytext=(0, 6),
+                      textcoords="offset points", ha="center",
+                      fontsize=8.5, color=COLOR[m])
+ax_delta.set_xticks(layers)
+ax_delta.tick_params(labelsize=9)
+ax_delta.set_xlabel("Layer index", fontsize=10.5)
+ax_delta.set_ylabel("‖Δθ_layer‖  (L2, weight space)", fontsize=10.5)
+ax_delta.set_title("Control — shared axis: Δθ is measured in weight space, so magnitudes "
+                   "ARE comparable across methods", fontsize=10.5)
+ax_delta.legend(fontsize=9, loc="upper right", ncol=3, frameon=True)
+ax_delta.margins(y=0.16)
 
-fig.tight_layout()
-fig.savefig(FIGDIR / "fig1_recovery_vs_delta.png", dpi=150)
+fig.savefig(FIGDIR / "fig1_recovery_vs_delta.png", dpi=150, bbox_inches="tight")
 plt.close(fig)
 
 
@@ -182,7 +198,7 @@ for c, m in enumerate(METHODS):
                facecolors="white", edgecolors=COLOR[m], marker=MARKER[m], s=46,
                linewidths=1.2, zorder=3)
     ax.axhline(0, color="gray", linewidth=0.7)
-    ax.set_title(panel_title(m), fontsize=10.5)
+    ax.set_title(panel_title(m), fontsize=12)
     ax.set_xticks(layers[::3])
     ax.tick_params(labelsize=9)
     ax.set_xlabel("Layer index", fontsize=10)
