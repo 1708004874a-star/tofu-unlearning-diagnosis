@@ -322,7 +322,7 @@ fisher:
   data_pipeline: "复用库的 dataset / collator，不自行 tokenize"
   smoke_test_samples: 20            # 先 20 条打印量级给人看，再放全量
   overlap: "各自归一化到和为 1 后 Σ min(Î_f, Î_r)，聚合到模块级"
-  dropped: ["D", "C", "D_rand", "C_rand", "验证一"]   # 师兄已发表过的工具，重做无差异化
+  dropped: ["D", "C", "D_rand", "C_rand", "验证一"]   # 已有公开工作覆盖，重做无差异化
 
 # ---------------------------------------------------------------------------
 # 段 F — relearning 单曲线
@@ -348,8 +348,8 @@ relearning:
 # 已砍除（不要实现，问起来就指这里）
 # ---------------------------------------------------------------------------
 dropped:
-  gradient_conflict: "只对 GD 有定义；只诊断灾难性遗忘；师兄已否掉作主方向"
-  delta_theta_D_C: "师兄两篇论文的核心工具，重做拿不到差异化"
+  gradient_conflict: "只对 GD 有定义；只诊断灾难性遗忘；不作主方向"
+  delta_theta_D_C: "已有公开工作的核心工具，重做拿不到差异化"
   simnpo: "无 repro 参考值，第三个 preference 方法，故事价值最低"
   activation_patching: "跨模型搬激活在跑崩的模型上是分布外的；写进报告作 next step"
   eval_subset: "抽子集会破坏与官方日志的可比性"
